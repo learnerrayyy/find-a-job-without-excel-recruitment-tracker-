@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Save Job</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">Job Tracker</p>
+          <h1>保存当前岗位</h1>
+        </div>
+        <span id="serverStatus" class="status">Checking</span>
+      </header>
+
+      <form id="captureForm">
+        <label>
+          公司
+          <input name="company_name" id="companyInput" required />
+        </label>
+
+        <label>
+          岗位
+          <input name="position_name" id="positionInput" required />
+        </label>
+
+        <label>
+          JD 页面 URL
+          <input name="source_url" id="sourceUrlInput" type="url" />
+        </label>
+
+        <label>
+          投递入口 URL
+          <input name="apply_url" id="applyUrlInput" type="url" />
+        </label>
+
+        <label>
+          JD 内容
+          <textarea name="jd_content" id="jdContentInput" rows="10"></textarea>
+        </label>
+
+        <div class="hint" id="captureHint">
+          选中页面上的 JD 文本后再点插件，保存会更准确。
+        </div>
+
+        <footer>
+          <button type="button" id="recaptureBtn">重新抓取</button>
+          <button type="submit" class="primary" id="saveBtn">保存</button>
+        </footer>
+      </form>
+
+      <p id="message" class="message"></p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

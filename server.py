@@ -196,6 +196,12 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt: str, *args: object) -> None:
         sys.stderr.write("%s - %s\n" % (self.address_string(), fmt % args))
 
+    def end_headers(self) -> None:
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        super().end_headers()
+
     def send_json(self, payload: object, status: int = 200) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
@@ -213,6 +219,10 @@ class Handler(BaseHTTPRequestHandler):
             return {}
         raw = self.rfile.read(length).decode("utf-8")
         return json.loads(raw)
+
+    def do_OPTIONS(self) -> None:
+        self.send_response(HTTPStatus.NO_CONTENT)
+        self.end_headers()
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)

@@ -1,0 +1,150 @@
+:root {
+  --bg: #f7f8fa;
+  --panel: #ffffff;
+  --text: #18202a;
+  --muted: #667085;
+  --line: #d8dde5;
+  --accent: #0f766e;
+  --accent-dark: #115e59;
+  --danger: #b42318;
+  --ok: #067647;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 420px;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+main {
+  padding: 16px;
+}
+
+header,
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+h1,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.eyebrow {
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status {
+  border-radius: 999px;
+  background: #eef2f6;
+  color: var(--muted);
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status.ok {
+  background: #ecfdf3;
+  color: var(--ok);
+}
+
+.status.error {
+  background: #fff1f0;
+  color: var(--danger);
+}
+
+form {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+input,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  padding: 9px 10px;
+  font: inherit;
+}
+
+textarea {
+  resize: vertical;
+}
+
+button {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--text);
+  padding: 0 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: #b8c0cc;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+.primary:hover {
+  background: var(--accent-dark);
+}
+
+.hint,
+.message {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.message {
+  margin-top: 12px;
+}
+
+.message.error {
+  color: var(--danger);
+}
+
+.message.ok {
+  color: var(--ok);
+}
