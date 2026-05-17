@@ -11,7 +11,7 @@ const CUSTOM_STATUS_VALUE = "__CUSTOM__";
 
 let jobs = [];
 let allJobs = [];
-let selectedJob = null;
+let timelineJob = null;
 let activeStatus = "ALL";
 
 const statusFilters = document.querySelector("#statusFilters");
@@ -19,7 +19,6 @@ const statusSelect = document.querySelector("#statusSelect");
 const jobsTable = document.querySelector("#jobsTable");
 const emptyState = document.querySelector("#emptyState");
 const summary = document.querySelector("#summary");
-const detailPanel = document.querySelector("#detailPanel");
 const searchInput = document.querySelector("#searchInput");
 const refreshBtn = document.querySelector("#refreshBtn");
 const newJobBtn = document.querySelector("#newJobBtn");
@@ -32,6 +31,22 @@ const jdDialogTitle = document.querySelector("#jdDialogTitle");
 const openOriginalJd = document.querySelector("#openOriginalJd");
 const openSavedJd = document.querySelector("#openSavedJd");
 const openSavedHtml = document.querySelector("#openSavedHtml");
+const editDialog = document.querySelector("#editDialog");
+const editForm = document.querySelector("#editForm");
+const editJobId = document.querySelector("#editJobId");
+const editCompanyName = document.querySelector("#editCompanyName");
+const editPositionName = document.querySelector("#editPositionName");
+const editSourceUrl = document.querySelector("#editSourceUrl");
+const editApplyUrl = document.querySelector("#editApplyUrl");
+const editApplyTime = document.querySelector("#editApplyTime");
+const editStatusSelect = document.querySelector("#editStatusSelect");
+const editCustomStatusField = document.querySelector("#editCustomStatusField");
+const editCustomStatusInput = document.querySelector("#editCustomStatusInput");
+const timelineDialog = document.querySelector("#timelineDialog");
+const timelineDialogTitle = document.querySelector("#timelineDialogTitle");
+const timelineDialogMeta = document.querySelector("#timelineDialogMeta");
+const timelineForm = document.querySelector("#timelineForm");
+const timelineList = document.querySelector("#timelineList");
 
 function statusLabel(status) {
   const labels = {
@@ -92,8 +107,6 @@ function renderStatusControls() {
   statusFilters.querySelectorAll("button").forEach((button) => {
     button.addEventListener("click", () => {
       activeStatus = button.dataset.status;
-      selectedJob = null;
-      renderEmptyDetail();
       loadJobs();
     });
   });
@@ -112,6 +125,15 @@ function statusOptionsForValue(value) {
     hasCustomValue ? `<option value="${escapeHtml(value)}" selected>${escapeHtml(value)}</option>` : "",
     `<option value="${CUSTOM_STATUS_VALUE}">自定义...</option>`,
   ].join("");
+}
+
+function dateInputValue(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
+  }
+  return date.toISOString().slice(0, 10);
 }
 
 function renderJobs() {
@@ -137,7 +159,10 @@ function renderJobs() {
         </button>
       </td>
       <td>
-        <button class="danger-button" data-action="delete" data-id="${job.id}">删除</button>
+        <div class="operation-stack">
+          <button data-action="edit" data-id="${job.id}">编辑</button>
+          <button class="danger-button" data-action="delete" data-id="${job.id}">删除</button>
+        </div>
       </td>
     </tr>
   `).join("");
@@ -166,9 +191,9 @@ function renderJobs() {
         method: "PATCH",
         body: JSON.stringify({ status: nextStatus }),
       });
-      if (selectedJob && selectedJob.id === job.id) {
-        selectedJob = { ...selectedJob, status: nextStatus };
-        await renderTimelineSidebar(selectedJob);
+      if (timelineJob && timelineJob.id === job.id) {
+        timelineJob = { ...timelineJob, status: nextStatus };
+        await renderTimelineDialog(timelineJob);
       }
       await loadJobs();
     });
@@ -178,8 +203,16 @@ function renderJobs() {
     button.addEventListener("click", async () => {
       const job = jobs.find((item) => String(item.id) === button.dataset.id);
       if (!job) return;
-      selectedJob = job;
-      await renderTimelineSidebar(job);
+      timelineJob = job;
+      await renderTimelineDialog(job);
+      timelineDialog.showModal();
+    });
+  });
+
+  jobsTable.querySelectorAll("[data-action='edit']").forEach((button) => {
+    button.addEventListener("click", () => {
+      const job = jobs.find((item) => String(item.id) === button.dataset.id);
+      if (job) openEditDialogForJob(job);
     });
   });
 
@@ -192,9 +225,9 @@ function renderJobs() {
       );
       if (!ok) return;
       await api(`/api/jobs/${job.id}`, { method: "DELETE" });
-      if (selectedJob && selectedJob.id === job.id) {
-        selectedJob = null;
-        renderEmptyDetail();
+      if (timelineJob && timelineJob.id === job.id) {
+        timelineJob = null;
+        timelineDialog.close();
       }
       await loadJobs();
     });
@@ -210,49 +243,31 @@ async function loadJobs() {
   renderJobs();
 }
 
-function renderEmptyDetail() {
-  detailPanel.innerHTML = `
-    <p class="eyebrow">Timeline</p>
-    <h3>选择一个岗位</h3>
-    <p class="muted">点击表格里的 Timeline，会在这里看到这个岗位的状态变化。</p>
-  `;
+function openEditDialogForJob(job) {
+  editJobId.value = job.id;
+  editCompanyName.value = job.company_name || "";
+  editPositionName.value = job.position_name || "";
+  editSourceUrl.value = job.source_url || "";
+  editApplyUrl.value = job.apply_url || "";
+  editApplyTime.value = dateInputValue(job.apply_time || job.created_at);
+  editStatusSelect.innerHTML = statusOptionsForValue(job.status);
+  editCustomStatusField.hidden = true;
+  editCustomStatusInput.required = false;
+  editCustomStatusInput.value = "";
+  editDialog.showModal();
 }
 
-async function renderTimelineSidebar(job) {
+async function renderTimelineDialog(job) {
   const timeline = await api(`/api/jobs/${job.id}/timeline`);
-  detailPanel.innerHTML = `
-    <p class="eyebrow">Timeline</p>
-    <h3>${escapeHtml(job.position_name)}</h3>
-    <p class="muted">${escapeHtml(job.company_name)} · ${statusLabel(job.status)}</p>
-
-    <form class="timeline-form" id="timelineForm">
-      <input name="event_title" placeholder="新增 Timeline 事件" required />
-      <textarea name="notes" rows="3" placeholder="备注"></textarea>
-      <button class="primary">添加事件</button>
-    </form>
-
-    <div class="timeline-list">
-      ${timeline.length ? timeline.map((item) => `
-        <div class="timeline-item">
-          <p><strong>${escapeHtml(item.event_title)}</strong></p>
-          <p class="muted">${formatDate(item.event_time)} · ${escapeHtml(item.source)}</p>
-          ${item.notes ? `<p>${escapeHtml(item.notes)}</p>` : ""}
-        </div>
-      `).join("") : '<p class="muted">暂无事件。</p>'}
+  timelineDialogTitle.textContent = job.position_name;
+  timelineDialogMeta.textContent = `${job.company_name} · ${statusLabel(job.status)}`;
+  timelineList.innerHTML = timeline.length ? timeline.map((item) => `
+    <div class="timeline-item">
+      <p><strong>${escapeHtml(item.event_title)}</strong></p>
+      <p class="muted">${formatDate(item.event_time)} · ${escapeHtml(item.source)}</p>
+      ${item.notes ? `<p>${escapeHtml(item.notes)}</p>` : ""}
     </div>
-  `;
-
-  document.querySelector("#timelineForm").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const form = new FormData(event.target);
-    await api(`/api/jobs/${job.id}/timeline`, {
-      method: "POST",
-      body: JSON.stringify(Object.fromEntries(form.entries())),
-    });
-    event.target.reset();
-    await loadJobs();
-    await renderTimelineSidebar(job);
-  });
+  `).join("") : '<p class="muted">暂无事件。</p>';
 }
 
 function openJdDialogForJob(job) {
@@ -287,6 +302,13 @@ statusSelect.addEventListener("change", () => {
   if (isCustom) customStatusInput.focus();
 });
 
+editStatusSelect.addEventListener("change", () => {
+  const isCustom = editStatusSelect.value === CUSTOM_STATUS_VALUE;
+  editCustomStatusField.hidden = !isCustom;
+  editCustomStatusInput.required = isCustom;
+  if (isCustom) editCustomStatusInput.focus();
+});
+
 jobForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const submitter = event.submitter;
@@ -317,8 +339,64 @@ jdDialog.addEventListener("click", (event) => {
   }
 });
 
+editForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const submitter = event.submitter;
+  if (submitter && submitter.value === "cancel") {
+    editDialog.close();
+    return;
+  }
+
+  const payload = Object.fromEntries(new FormData(editForm).entries());
+  const jobId = payload.id;
+  delete payload.id;
+
+  if (payload.status === CUSTOM_STATUS_VALUE) {
+    payload.status = (payload.custom_status || "").trim();
+  }
+  delete payload.custom_status;
+  payload.status = payload.status || "APPLIED";
+
+  await api(`/api/jobs/${jobId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+
+  editDialog.close();
+  await loadJobs();
+
+  if (timelineJob && String(timelineJob.id) === String(jobId)) {
+    timelineJob = { ...timelineJob, ...payload };
+    await renderTimelineDialog(timelineJob);
+  }
+});
+
+editDialog.addEventListener("close", () => {
+  editCustomStatusField.hidden = true;
+  editCustomStatusInput.required = false;
+  editCustomStatusInput.value = "";
+});
+
+timelineDialog.addEventListener("click", (event) => {
+  if (event.target.matches("[data-close-timeline]")) {
+    timelineDialog.close();
+  }
+});
+
+timelineForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!timelineJob) return;
+  const form = new FormData(event.target);
+  await api(`/api/jobs/${timelineJob.id}/timeline`, {
+    method: "POST",
+    body: JSON.stringify(Object.fromEntries(form.entries())),
+  });
+  event.target.reset();
+  await loadJobs();
+  await renderTimelineDialog(timelineJob);
+});
+
 renderStatusControls();
-renderEmptyDetail();
 loadJobs().catch((error) => {
   summary.textContent = error.message;
 });

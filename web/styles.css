@@ -97,10 +97,58 @@ h3 {
   font-size: 18px;
 }
 
+.nav-section {
+  margin-top: 24px;
+}
+
+.nav-section + .nav-section {
+  margin-top: 14px;
+}
+
+.nav-section summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  border-radius: 6px;
+  color: #344054;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 750;
+  list-style: none;
+  padding: 0 8px;
+}
+
+.nav-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.nav-section summary:hover {
+  background: #e4ebed;
+}
+
+.triangle {
+  display: inline-block;
+  color: var(--muted);
+  transform: rotate(0deg);
+  transition: transform 140ms ease;
+}
+
+.nav-section[open] .triangle {
+  transform: rotate(90deg);
+}
+
 .status-list {
   display: grid;
   gap: 6px;
-  margin-top: 32px;
+  margin-top: 6px;
+}
+
+.summary-placeholder {
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 8px;
 }
 
 .status-filter {
@@ -146,15 +194,7 @@ h3 {
   padding: 0 12px;
 }
 
-.content-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 16px;
-  align-items: start;
-}
-
-.table-wrap,
-.detail-panel {
+.table-wrap {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel);
@@ -240,17 +280,21 @@ a:hover {
   border-color: var(--danger);
 }
 
+.operation-stack {
+  display: grid;
+  gap: 6px;
+  width: 88px;
+}
+
+.operation-stack button {
+  width: 100%;
+}
+
 .empty {
   display: none;
   padding: 32px;
   color: var(--muted);
   text-align: center;
-}
-
-.detail-panel {
-  position: sticky;
-  top: 24px;
-  padding: 18px;
 }
 
 .detail-actions,
@@ -280,6 +324,10 @@ dialog {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 0;
+}
+
+#timelineDialog {
+  width: min(760px, calc(100vw - 32px));
 }
 
 dialog::backdrop {
@@ -363,15 +411,7 @@ dialog::backdrop {
   }
 
   .status-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .content-grid {
     grid-template-columns: 1fr;
-  }
-
-  .detail-panel {
-    position: static;
   }
 }
 

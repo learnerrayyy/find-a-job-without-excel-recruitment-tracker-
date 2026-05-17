@@ -13,7 +13,20 @@
           <p class="eyebrow">Local CRM</p>
           <h1>Job Tracker</h1>
         </div>
-        <nav class="status-list" id="statusFilters"></nav>
+        <details class="nav-section" open>
+          <summary>
+            <span class="triangle">▸</span>
+            <span>Applications</span>
+          </summary>
+          <nav class="status-list" id="statusFilters"></nav>
+        </details>
+        <details class="nav-section" open>
+          <summary>
+            <span class="triangle">▸</span>
+            <span>Summarize</span>
+          </summary>
+          <div class="summary-placeholder">Coming soon</div>
+        </details>
       </aside>
 
       <main class="main">
@@ -30,28 +43,20 @@
           <button id="refreshBtn">刷新</button>
         </section>
 
-        <section class="content-grid">
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>投递时间</th>
-                  <th>岗位名字</th>
-                  <th>状态</th>
-                  <th>Timeline</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody id="jobsTable"></tbody>
-            </table>
-            <div class="empty" id="emptyState">还没有岗位，先新增一条。</div>
-          </div>
-
-          <aside class="detail-panel" id="detailPanel">
-            <p class="eyebrow">Timeline</p>
-            <h3>选择一个岗位</h3>
-            <p class="muted">点击表格里的 Timeline，会在这里看到这个岗位的状态变化。</p>
-          </aside>
+        <section class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>投递时间</th>
+                <th>岗位名字</th>
+                <th>状态</th>
+                <th>Timeline</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="jobsTable"></tbody>
+          </table>
+          <div class="empty" id="emptyState">还没有岗位，先新增一条。</div>
         </section>
       </main>
     </div>
@@ -112,6 +117,69 @@
           <a id="openSavedJd" class="choice-link" target="_blank" rel="noreferrer">保存 JD</a>
           <a id="openSavedHtml" class="choice-link" target="_blank" rel="noreferrer">HTML 备份</a>
         </div>
+      </div>
+    </dialog>
+
+    <dialog id="editDialog">
+      <form method="dialog" class="dialog-form" id="editForm">
+        <header>
+          <h3>编辑岗位</h3>
+          <button value="cancel" class="icon-btn" aria-label="Close">×</button>
+        </header>
+        <input name="id" id="editJobId" type="hidden" />
+        <label>
+          公司
+          <input name="company_name" id="editCompanyName" required />
+        </label>
+        <label>
+          岗位
+          <input name="position_name" id="editPositionName" required />
+        </label>
+        <label>
+          JD 页面 URL
+          <input name="source_url" id="editSourceUrl" type="url" />
+        </label>
+        <label>
+          投递入口 URL
+          <input name="apply_url" id="editApplyUrl" type="url" />
+        </label>
+        <label>
+          投递时间
+          <input name="apply_time" id="editApplyTime" type="date" />
+        </label>
+        <label>
+          当前状态
+          <select name="status" id="editStatusSelect"></select>
+        </label>
+        <label id="editCustomStatusField" hidden>
+          自定义状态
+          <input name="custom_status" id="editCustomStatusInput" placeholder="例如：等 HR 回复" />
+        </label>
+        <footer>
+          <button value="cancel">取消</button>
+          <button class="primary" value="default">保存修改</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="timelineDialog">
+      <div class="dialog-form">
+        <header>
+          <div>
+            <p class="eyebrow">Timeline</p>
+            <h3 id="timelineDialogTitle">Timeline</h3>
+            <p class="muted" id="timelineDialogMeta"></p>
+          </div>
+          <button type="button" class="icon-btn" data-close-timeline aria-label="Close">×</button>
+        </header>
+
+        <form class="timeline-form" id="timelineForm">
+          <input name="event_title" placeholder="新增 Timeline 事件" required />
+          <textarea name="notes" rows="3" placeholder="备注"></textarea>
+          <button class="primary">添加事件</button>
+        </form>
+
+        <div class="timeline-list" id="timelineList"></div>
       </div>
     </dialog>
 
