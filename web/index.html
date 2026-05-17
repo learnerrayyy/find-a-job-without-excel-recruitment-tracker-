@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Job Application Tracker</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div>
+          <p class="eyebrow">Local CRM</p>
+          <h1>Job Tracker</h1>
+        </div>
+        <nav class="status-list" id="statusFilters"></nav>
+      </aside>
+
+      <main class="main">
+        <header class="toolbar">
+          <div>
+            <h2>Applications</h2>
+            <p id="summary">Loading...</p>
+          </div>
+          <button class="primary" id="newJobBtn">+ 新增岗位</button>
+        </header>
+
+        <section class="controls">
+          <input id="searchInput" type="search" placeholder="搜索公司、岗位、链接" />
+          <button id="refreshBtn">刷新</button>
+        </section>
+
+        <section class="content-grid">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>公司</th>
+                  <th>岗位</th>
+                  <th>状态</th>
+                  <th>投递时间</th>
+                  <th>Timeline</th>
+                  <th>链接</th>
+                </tr>
+              </thead>
+              <tbody id="jobsTable"></tbody>
+            </table>
+            <div class="empty" id="emptyState">还没有岗位，先新增一条。</div>
+          </div>
+
+          <aside class="detail-panel" id="detailPanel">
+            <p class="eyebrow">Detail</p>
+            <h3>选择一个岗位</h3>
+            <p class="muted">点击表格中的岗位后，可以查看 Timeline、修改状态、打开本地 JD。</p>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="jobDialog">
+      <form method="dialog" class="dialog-form" id="jobForm">
+        <header>
+          <h3>新增岗位</h3>
+          <button value="cancel" class="icon-btn" aria-label="Close">×</button>
+        </header>
+        <label>
+          公司
+          <input name="company_name" required />
+        </label>
+        <label>
+          岗位
+          <input name="position_name" required />
+        </label>
+        <label>
+          JD 页面 URL
+          <input name="source_url" type="url" />
+        </label>
+        <label>
+          投递入口 URL
+          <input name="apply_url" type="url" />
+        </label>
+        <label>
+          投递时间
+          <input name="apply_time" type="date" />
+        </label>
+        <label>
+          当前状态
+          <select name="status" id="statusSelect"></select>
+        </label>
+        <label>
+          JD 内容
+          <textarea name="jd_content" rows="10" placeholder="先粘贴 JD 文本，后续会由 Chrome 插件自动保存。"></textarea>
+        </label>
+        <footer>
+          <button value="cancel">取消</button>
+          <button class="primary" value="default">保存</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
