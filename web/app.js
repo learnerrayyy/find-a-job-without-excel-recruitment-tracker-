@@ -1,17 +1,16 @@
-const STATUSES = [
-  "ALL",
-  "DISCOVERED",
-  "SAVED",
+const NAV_FILTERS = ["ALL", "REJECTED"];
+const STATUS_OPTIONS = [
   "APPLIED",
-  "OA",
-  "INTERVIEW",
-  "OFFER",
+  "OA_PENDING",
+  "OA_COMPLETED",
+  "INTERVIEW_PENDING",
+  "INTERVIEW_COMPLETED",
   "REJECTED",
-  "GHOSTED",
-  "WITHDRAWN",
 ];
+const CUSTOM_STATUS_VALUE = "__CUSTOM__";
 
 let jobs = [];
+let allJobs = [];
 let selectedJob = null;
 let activeStatus = "ALL";
 
@@ -26,19 +25,23 @@ const refreshBtn = document.querySelector("#refreshBtn");
 const newJobBtn = document.querySelector("#newJobBtn");
 const jobDialog = document.querySelector("#jobDialog");
 const jobForm = document.querySelector("#jobForm");
+const customStatusField = document.querySelector("#customStatusField");
+const customStatusInput = document.querySelector("#customStatusInput");
+const jdDialog = document.querySelector("#jdDialog");
+const jdDialogTitle = document.querySelector("#jdDialogTitle");
+const openOriginalJd = document.querySelector("#openOriginalJd");
+const openSavedJd = document.querySelector("#openSavedJd");
+const openSavedHtml = document.querySelector("#openSavedHtml");
 
 function statusLabel(status) {
   const labels = {
     ALL: "全部",
-    DISCOVERED: "发现",
-    SAVED: "已保存",
     APPLIED: "已投递",
-    OA: "OA",
-    INTERVIEW: "面试",
-    OFFER: "Offer",
+    OA_PENDING: "有笔试未完成",
+    OA_COMPLETED: "有笔试已完成",
+    INTERVIEW_PENDING: "有面试未完成",
+    INTERVIEW_COMPLETED: "已面试",
     REJECTED: "拒绝",
-    GHOSTED: "无回复",
-    WITHDRAWN: "已撤回",
   };
   return labels[status] || status;
 }
@@ -47,12 +50,10 @@ function formatDate(value) {
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString([], {
+  return date.toLocaleDateString([], {
     year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    month: "2-digit",
+    day: "2-digit",
   });
 }
 
@@ -78,8 +79,8 @@ async function api(path, options = {}) {
 }
 
 function renderStatusControls() {
-  statusFilters.innerHTML = STATUSES.map((status) => {
-    const count = status === "ALL" ? jobs.length : jobs.filter((job) => job.status === status).length;
+  statusFilters.innerHTML = NAV_FILTERS.map((status) => {
+    const count = status === "ALL" ? allJobs.length : allJobs.filter((job) => job.status === status).length;
     return `
       <button class="status-filter ${activeStatus === status ? "active" : ""}" data-status="${status}">
         <span>${statusLabel(status)}</span>
@@ -91,43 +92,111 @@ function renderStatusControls() {
   statusFilters.querySelectorAll("button").forEach((button) => {
     button.addEventListener("click", () => {
       activeStatus = button.dataset.status;
+      selectedJob = null;
+      renderEmptyDetail();
       loadJobs();
     });
   });
 
-  statusSelect.innerHTML = STATUSES.filter((status) => status !== "ALL")
-    .map((status) => `<option value="${status}">${statusLabel(status)}</option>`)
-    .join("");
+  statusSelect.innerHTML = STATUS_OPTIONS.map((status) => (
+    `<option value="${status}" ${status === "APPLIED" ? "selected" : ""}>${statusLabel(status)}</option>`
+  )).join("") + `<option value="${CUSTOM_STATUS_VALUE}">自定义...</option>`;
+}
+
+function statusOptionsForValue(value) {
+  const hasCustomValue = value && !STATUS_OPTIONS.includes(value);
+  return [
+    ...STATUS_OPTIONS.map((status) => (
+      `<option value="${status}" ${value === status ? "selected" : ""}>${statusLabel(status)}</option>`
+    )),
+    hasCustomValue ? `<option value="${escapeHtml(value)}" selected>${escapeHtml(value)}</option>` : "",
+    `<option value="${CUSTOM_STATUS_VALUE}">自定义...</option>`,
+  ].join("");
 }
 
 function renderJobs() {
   summary.textContent = `${jobs.length} 个岗位`;
   emptyState.style.display = jobs.length ? "none" : "block";
   jobsTable.innerHTML = jobs.map((job) => `
-    <tr data-id="${job.id}">
-      <td>${escapeHtml(job.company_name)}</td>
+    <tr>
+      <td>${escapeHtml(formatDate(job.apply_time || job.created_at))}</td>
       <td>
-        <div class="job-title">
-          <strong>${escapeHtml(job.position_name)}</strong>
-          <span class="muted">${escapeHtml(job.source_url || "")}</span>
-        </div>
+        <button class="job-link" data-action="jd" data-id="${job.id}">
+          ${escapeHtml(job.position_name)}
+        </button>
+        <div class="muted">${escapeHtml(job.company_name)}</div>
       </td>
-      <td><span class="badge ${String(job.status).toLowerCase()}">${statusLabel(job.status)}</span></td>
-      <td>${escapeHtml(job.apply_time || "-")}</td>
-      <td>${job.timeline_count || 0} 条</td>
       <td>
-        <div class="link-row">
-          <a href="/api/jobs/${job.id}/jd" target="_blank" rel="noreferrer">JD</a>
-          ${job.apply_url ? `<a href="${escapeHtml(job.apply_url)}" target="_blank" rel="noreferrer">投递</a>` : ""}
-        </div>
+        <select class="inline-status" data-action="status" data-id="${job.id}">
+          ${statusOptionsForValue(job.status)}
+        </select>
+      </td>
+      <td>
+        <button class="timeline-button" data-action="timeline" data-id="${job.id}">
+          ${job.timeline_count || 0} 条
+        </button>
+      </td>
+      <td>
+        <button class="danger-button" data-action="delete" data-id="${job.id}">删除</button>
       </td>
     </tr>
   `).join("");
 
-  jobsTable.querySelectorAll("tr").forEach((row) => {
-    row.addEventListener("click", () => {
-      selectedJob = jobs.find((job) => String(job.id) === row.dataset.id);
-      renderDetail();
+  jobsTable.querySelectorAll("[data-action='jd']").forEach((button) => {
+    button.addEventListener("click", () => {
+      const job = jobs.find((item) => String(item.id) === button.dataset.id);
+      if (job) openJdDialogForJob(job);
+    });
+  });
+
+  jobsTable.querySelectorAll("[data-action='status']").forEach((select) => {
+    select.addEventListener("change", async () => {
+      const job = jobs.find((item) => String(item.id) === select.dataset.id);
+      if (!job) return;
+      let nextStatus = select.value;
+      if (nextStatus === CUSTOM_STATUS_VALUE) {
+        nextStatus = window.prompt("请输入自定义状态", job.status || "");
+        if (!nextStatus || !nextStatus.trim()) {
+          select.value = job.status;
+          return;
+        }
+        nextStatus = nextStatus.trim();
+      }
+      await api(`/api/jobs/${job.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (selectedJob && selectedJob.id === job.id) {
+        selectedJob = { ...selectedJob, status: nextStatus };
+        await renderTimelineSidebar(selectedJob);
+      }
+      await loadJobs();
+    });
+  });
+
+  jobsTable.querySelectorAll("[data-action='timeline']").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const job = jobs.find((item) => String(item.id) === button.dataset.id);
+      if (!job) return;
+      selectedJob = job;
+      await renderTimelineSidebar(job);
+    });
+  });
+
+  jobsTable.querySelectorAll("[data-action='delete']").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const job = jobs.find((item) => String(item.id) === button.dataset.id);
+      if (!job) return;
+      const ok = window.confirm(
+        `确认删除这个岗位吗？\n\n${job.company_name} - ${job.position_name}\n\n删除后会同时删除本地保存的 JD 文件夹。`
+      );
+      if (!ok) return;
+      await api(`/api/jobs/${job.id}`, { method: "DELETE" });
+      if (selectedJob && selectedJob.id === job.id) {
+        selectedJob = null;
+        renderEmptyDetail();
+      }
+      await loadJobs();
     });
   });
 }
@@ -135,39 +204,26 @@ function renderJobs() {
 async function loadJobs() {
   const params = new URLSearchParams();
   if (searchInput.value.trim()) params.set("q", searchInput.value.trim());
-  if (activeStatus !== "ALL") params.set("status", activeStatus);
-  jobs = await api(`/api/jobs?${params.toString()}`);
+  allJobs = await api(`/api/jobs?${params.toString()}`);
+  jobs = activeStatus === "ALL" ? allJobs : allJobs.filter((job) => job.status === activeStatus);
   renderStatusControls();
   renderJobs();
-  if (selectedJob) {
-    selectedJob = jobs.find((job) => job.id === selectedJob.id) || selectedJob;
-    renderDetail();
-  }
 }
 
-async function renderDetail() {
-  if (!selectedJob) return;
-  const timeline = await api(`/api/jobs/${selectedJob.id}/timeline`);
+function renderEmptyDetail() {
   detailPanel.innerHTML = `
-    <p class="eyebrow">Detail</p>
-    <h3>${escapeHtml(selectedJob.company_name)}</h3>
-    <p><strong>${escapeHtml(selectedJob.position_name)}</strong></p>
-    <p class="muted">创建于 ${formatDate(selectedJob.created_at)}</p>
+    <p class="eyebrow">Timeline</p>
+    <h3>选择一个岗位</h3>
+    <p class="muted">点击表格里的 Timeline，会在这里看到这个岗位的状态变化。</p>
+  `;
+}
 
-    <div class="detail-actions">
-      <label>
-        当前状态
-        <select id="detailStatus">
-          ${STATUSES.filter((status) => status !== "ALL").map((status) => `
-            <option value="${status}" ${selectedJob.status === status ? "selected" : ""}>${statusLabel(status)}</option>
-          `).join("")}
-        </select>
-      </label>
-      <a href="/api/jobs/${selectedJob.id}/jd" target="_blank" rel="noreferrer">打开本地 JD</a>
-      ${selectedJob.source_url ? `<a href="${escapeHtml(selectedJob.source_url)}" target="_blank" rel="noreferrer">打开原始页面</a>` : ""}
-      ${selectedJob.apply_url ? `<a href="${escapeHtml(selectedJob.apply_url)}" target="_blank" rel="noreferrer">打开投递入口</a>` : ""}
-      <button id="deleteJobBtn">删除岗位</button>
-    </div>
+async function renderTimelineSidebar(job) {
+  const timeline = await api(`/api/jobs/${job.id}/timeline`);
+  detailPanel.innerHTML = `
+    <p class="eyebrow">Timeline</p>
+    <h3>${escapeHtml(job.position_name)}</h3>
+    <p class="muted">${escapeHtml(job.company_name)} · ${statusLabel(job.status)}</p>
 
     <form class="timeline-form" id="timelineForm">
       <input name="event_title" placeholder="新增 Timeline 事件" required />
@@ -175,7 +231,6 @@ async function renderDetail() {
       <button class="primary">添加事件</button>
     </form>
 
-    <h3>Timeline</h3>
     <div class="timeline-list">
       ${timeline.length ? timeline.map((item) => `
         <div class="timeline-item">
@@ -187,38 +242,35 @@ async function renderDetail() {
     </div>
   `;
 
-  document.querySelector("#detailStatus").addEventListener("change", async (event) => {
-    selectedJob = await api(`/api/jobs/${selectedJob.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ status: event.target.value }),
-    });
-    await loadJobs();
-  });
-
-  document.querySelector("#deleteJobBtn").addEventListener("click", async () => {
-    const ok = window.confirm(`删除 ${selectedJob.company_name} - ${selectedJob.position_name}？`);
-    if (!ok) return;
-    await api(`/api/jobs/${selectedJob.id}`, { method: "DELETE" });
-    selectedJob = null;
-    detailPanel.innerHTML = `
-      <p class="eyebrow">Detail</p>
-      <h3>选择一个岗位</h3>
-      <p class="muted">点击表格中的岗位后，可以查看 Timeline、修改状态、打开本地 JD。</p>
-    `;
-    await loadJobs();
-  });
-
   document.querySelector("#timelineForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = new FormData(event.target);
-    await api(`/api/jobs/${selectedJob.id}/timeline`, {
+    await api(`/api/jobs/${job.id}/timeline`, {
       method: "POST",
       body: JSON.stringify(Object.fromEntries(form.entries())),
     });
     event.target.reset();
     await loadJobs();
-    await renderDetail();
+    await renderTimelineSidebar(job);
   });
+}
+
+function openJdDialogForJob(job) {
+  jdDialogTitle.textContent = `${job.company_name} - ${job.position_name}`;
+  openSavedJd.href = `/api/jobs/${job.id}/jd`;
+  openSavedHtml.href = `/api/jobs/${job.id}/html`;
+
+  if (job.source_url) {
+    openOriginalJd.href = job.source_url;
+    openOriginalJd.removeAttribute("aria-disabled");
+    openOriginalJd.classList.remove("disabled");
+  } else {
+    openOriginalJd.href = "#";
+    openOriginalJd.setAttribute("aria-disabled", "true");
+    openOriginalJd.classList.add("disabled");
+  }
+
+  jdDialog.showModal();
 }
 
 newJobBtn.addEventListener("click", () => jobDialog.showModal());
@@ -226,6 +278,13 @@ refreshBtn.addEventListener("click", loadJobs);
 searchInput.addEventListener("input", () => {
   clearTimeout(searchInput.searchTimer);
   searchInput.searchTimer = setTimeout(loadJobs, 180);
+});
+
+statusSelect.addEventListener("change", () => {
+  const isCustom = statusSelect.value === CUSTOM_STATUS_VALUE;
+  customStatusField.hidden = !isCustom;
+  customStatusInput.required = isCustom;
+  if (isCustom) customStatusInput.focus();
 });
 
 jobForm.addEventListener("submit", async (event) => {
@@ -236,16 +295,30 @@ jobForm.addEventListener("submit", async (event) => {
     return;
   }
   const payload = Object.fromEntries(new FormData(jobForm).entries());
+  if (payload.status === CUSTOM_STATUS_VALUE) {
+    payload.status = (payload.custom_status || "").trim();
+  }
+  delete payload.custom_status;
+  payload.status = payload.status || "APPLIED";
   await api("/api/jobs", {
     method: "POST",
     body: JSON.stringify(payload),
   });
   jobForm.reset();
+  customStatusField.hidden = true;
+  customStatusInput.required = false;
   jobDialog.close();
   await loadJobs();
 });
 
+jdDialog.addEventListener("click", (event) => {
+  if (event.target.matches("[data-close]")) {
+    jdDialog.close();
+  }
+});
+
 renderStatusControls();
+renderEmptyDetail();
 loadJobs().catch((error) => {
   summary.textContent = error.message;
 });

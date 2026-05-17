@@ -19,17 +19,24 @@ JOBS_DIR = DATA_DIR / "jobs"
 DB_PATH = DATA_DIR / "tracker.db"
 WEB_DIR = ROOT / "web"
 
-STATUSES = {
-    "DISCOVERED",
-    "SAVED",
+DEFAULT_STATUS = "APPLIED"
+KNOWN_STATUSES = {
     "APPLIED",
-    "OA",
-    "INTERVIEW",
-    "OFFER",
+    "OA_PENDING",
+    "OA_COMPLETED",
+    "INTERVIEW_PENDING",
+    "INTERVIEW_COMPLETED",
     "REJECTED",
-    "GHOSTED",
-    "WITHDRAWN",
 }
+
+
+def normalize_status(value: str | None) -> str:
+    status = (value or DEFAULT_STATUS).strip()
+    if not status:
+        return DEFAULT_STATUS
+    if len(status) > 80:
+        raise ValueError("Status is too long")
+    return status
 
 
 def utc_now() -> str:
@@ -66,8 +73,8 @@ def init_db() -> None:
                 html_local_path TEXT,
                 screenshot_local_path TEXT,
                 apply_time TEXT,
-                current_stage TEXT NOT NULL DEFAULT 'SAVED',
-                status TEXT NOT NULL DEFAULT 'SAVED',
+                current_stage TEXT NOT NULL DEFAULT 'APPLIED',
+                status TEXT NOT NULL DEFAULT 'APPLIED',
                 latest_email_id INTEGER,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
@@ -110,6 +117,30 @@ def init_db() -> None:
                 ON timeline_events(job_application_id);
             """
         )
+        conn.execute(
+            """
+            UPDATE job_applications
+            SET status = 'APPLIED',
+                current_stage = 'APPLIED'
+            WHERE status IN ('DISCOVERED', 'SAVED')
+            """
+        )
+        conn.execute(
+            """
+            UPDATE job_applications
+            SET status = 'OA_PENDING',
+                current_stage = 'OA_PENDING'
+            WHERE status = 'OA'
+            """
+        )
+        conn.execute(
+            """
+            UPDATE job_applications
+            SET status = 'INTERVIEW_PENDING',
+                current_stage = 'INTERVIEW_PENDING'
+            WHERE status = 'INTERVIEW'
+            """
+        )
 
 
 def row_to_dict(row: sqlite3.Row) -> dict:
@@ -119,7 +150,7 @@ def row_to_dict(row: sqlite3.Row) -> dict:
 def markdown_for_job(payload: dict) -> str:
     company = payload.get("company_name", "").strip()
     position = payload.get("position_name", "").strip()
-    status = payload.get("status", "SAVED").strip() or "SAVED"
+    status = normalize_status(payload.get("status"))
     source_url = payload.get("source_url", "").strip()
     apply_url = payload.get("apply_url", "").strip()
     jd_content = payload.get("jd_content", "").strip()
@@ -242,6 +273,9 @@ class Handler(BaseHTTPRequestHandler):
             if len(parts) == 4 and parts[2].isdigit() and parts[3] == "jd":
                 self.serve_jd(int(parts[2]))
                 return
+            if len(parts) == 4 and parts[2].isdigit() and parts[3] == "html":
+                self.serve_saved_html(int(parts[2]))
+                return
 
         self.serve_static(path)
 
@@ -341,9 +375,10 @@ class Handler(BaseHTTPRequestHandler):
         if not company or not position:
             self.send_error_json("company_name and position_name are required")
             return
-        status = payload.get("status", "SAVED").strip() or "SAVED"
-        if status not in STATUSES:
-            self.send_error_json(f"Invalid status: {status}")
+        try:
+            status = normalize_status(payload.get("status"))
+        except ValueError as error:
+            self.send_error_json(str(error))
             return
 
         md_path, html_path = save_job_files({**payload, "status": status})
@@ -381,7 +416,7 @@ class Handler(BaseHTTPRequestHandler):
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
-                (job_id, "SAVED", "岗位已保存", now, "manual", "", now),
+                (job_id, "APPLIED", "岗位已投递", now, "manual", "", now),
             )
         self.get_job(job_id)
 
@@ -396,9 +431,12 @@ class Handler(BaseHTTPRequestHandler):
             "status",
         }
         updates = {key: payload[key] for key in allowed if key in payload}
-        if "status" in updates and updates["status"] not in STATUSES:
-            self.send_error_json(f"Invalid status: {updates['status']}")
-            return
+        if "status" in updates:
+            try:
+                updates["status"] = normalize_status(updates["status"])
+            except ValueError as error:
+                self.send_error_json(str(error))
+                return
         if not updates:
             self.send_error_json("No supported fields to update")
             return
@@ -504,6 +542,25 @@ class Handler(BaseHTTPRequestHandler):
         body = target.read_bytes()
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "text/markdown; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def serve_saved_html(self, job_id: int) -> None:
+        with db() as conn:
+            row = conn.execute(
+                "SELECT html_local_path FROM job_applications WHERE id = ?", (job_id,)
+            ).fetchone()
+        if not row or not row["html_local_path"]:
+            self.send_error_json("Saved HTML not found", HTTPStatus.NOT_FOUND)
+            return
+        target = (ROOT / row["html_local_path"]).resolve()
+        if not str(target).startswith(str(JOBS_DIR.resolve())) or not target.exists():
+            self.send_error_json("Saved HTML file missing", HTTPStatus.NOT_FOUND)
+            return
+        body = target.read_bytes()
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)

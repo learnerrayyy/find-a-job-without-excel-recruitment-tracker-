@@ -35,12 +35,11 @@
             <table>
               <thead>
                 <tr>
-                  <th>公司</th>
-                  <th>岗位</th>
-                  <th>状态</th>
                   <th>投递时间</th>
+                  <th>岗位名字</th>
+                  <th>状态</th>
                   <th>Timeline</th>
-                  <th>链接</th>
+                  <th>操作</th>
                 </tr>
               </thead>
               <tbody id="jobsTable"></tbody>
@@ -49,9 +48,9 @@
           </div>
 
           <aside class="detail-panel" id="detailPanel">
-            <p class="eyebrow">Detail</p>
+            <p class="eyebrow">Timeline</p>
             <h3>选择一个岗位</h3>
-            <p class="muted">点击表格中的岗位后，可以查看 Timeline、修改状态、打开本地 JD。</p>
+            <p class="muted">点击表格里的 Timeline，会在这里看到这个岗位的状态变化。</p>
           </aside>
         </section>
       </main>
@@ -87,6 +86,10 @@
           当前状态
           <select name="status" id="statusSelect"></select>
         </label>
+        <label class="custom-status-field" id="customStatusField" hidden>
+          自定义状态
+          <input name="custom_status" id="customStatusInput" placeholder="例如：等 HR 回复" />
+        </label>
         <label>
           JD 内容
           <textarea name="jd_content" rows="10" placeholder="先粘贴 JD 文本，后续会由 Chrome 插件自动保存。"></textarea>
@@ -96,6 +99,20 @@
           <button class="primary" value="default">保存</button>
         </footer>
       </form>
+    </dialog>
+
+    <dialog id="jdDialog">
+      <div class="dialog-form">
+        <header>
+          <h3 id="jdDialogTitle">打开 JD</h3>
+          <button type="button" class="icon-btn" data-close aria-label="Close">×</button>
+        </header>
+        <div class="jd-choice-grid">
+          <a id="openOriginalJd" class="choice-link" target="_blank" rel="noreferrer">原始 JD</a>
+          <a id="openSavedJd" class="choice-link" target="_blank" rel="noreferrer">保存 JD</a>
+          <a id="openSavedHtml" class="choice-link" target="_blank" rel="noreferrer">HTML 备份</a>
+        </div>
+      </div>
     </dialog>
 
     <script src="/app.js"></script>

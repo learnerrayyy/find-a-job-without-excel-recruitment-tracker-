@@ -118,7 +118,7 @@ async function saveJob(event) {
   setMessage("正在保存到本地 Tracker...");
 
   const payload = Object.fromEntries(new FormData(form).entries());
-  payload.status = "SAVED";
+  payload.status = "APPLIED";
   payload.html_content = capturedPage.html;
   payload.page_title = capturedPage.title;
 
