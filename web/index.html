@@ -25,38 +25,63 @@
             <span class="triangle">▸</span>
             <span>Summarize</span>
           </summary>
-          <div class="summary-placeholder">Coming soon</div>
+          <button class="summary-nav-button" id="summaryNavButton">流程总结</button>
+        </details>
+        <details class="nav-section" open>
+          <summary>
+            <span class="triangle">▸</span>
+            <span>Autofill</span>
+          </summary>
+          <button class="summary-nav-button" id="profilesNavButton">Resume Profiles</button>
         </details>
       </aside>
 
       <main class="main">
         <header class="toolbar">
           <div>
-            <h2>Applications</h2>
+            <h2 id="mainTitle">Applications</h2>
             <p id="summary">Loading...</p>
           </div>
           <button class="primary" id="newJobBtn">+ 新增岗位</button>
         </header>
 
-        <section class="controls">
-          <input id="searchInput" type="search" placeholder="搜索公司、岗位、链接" />
-          <button id="refreshBtn">刷新</button>
-        </section>
+        <div id="applicationsView">
+          <section class="controls">
+            <input id="searchInput" type="search" placeholder="搜索公司、岗位、链接" />
+            <button id="refreshBtn">刷新</button>
+          </section>
 
-        <section class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>投递时间</th>
-                <th>岗位名字</th>
-                <th>状态</th>
-                <th>Timeline</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody id="jobsTable"></tbody>
-          </table>
-          <div class="empty" id="emptyState">还没有岗位，先新增一条。</div>
+          <section class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>投递时间</th>
+                  <th>岗位名字</th>
+                  <th>分类</th>
+                  <th>阶段</th>
+                  <th>子状态</th>
+                  <th>Timeline</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="jobsTable"></tbody>
+            </table>
+            <div class="empty" id="emptyState">还没有岗位，先新增一条。</div>
+          </section>
+        </div>
+
+        <section class="summary-view" id="summaryView" hidden></section>
+        <section class="profiles-view" id="profilesView" hidden>
+          <section class="personal-info-panel">
+            <div>
+              <p class="eyebrow">Shared Autofill Info</p>
+              <h3>个人固定信息</h3>
+              <p class="muted">姓名、电话、住址、签证等会在所有简历中共用；邮箱仍然跟随每份简历。</p>
+            </div>
+            <button id="editPersonalInfoBtn">编辑个人信息</button>
+          </section>
+          <div class="profile-grid" id="profilesGrid"></div>
+          <div class="empty" id="profilesEmpty">还没有 Resume Profile，先上传一份简历。</div>
         </section>
       </main>
     </div>
@@ -88,12 +113,20 @@
           <input name="apply_time" type="date" />
         </label>
         <label>
-          当前状态
-          <select name="status" id="statusSelect"></select>
+          分类
+          <select name="job_type" id="jobTypeSelect"></select>
         </label>
-        <label class="custom-status-field" id="customStatusField" hidden>
-          自定义状态
-          <input name="custom_status" id="customStatusInput" placeholder="例如：等 HR 回复" />
+        <label>
+          阶段
+          <select name="current_stage" id="stageSelect"></select>
+        </label>
+        <label>
+          子状态
+          <select name="status" id="subStatusSelect"></select>
+        </label>
+        <label id="customSubStatusField" hidden>
+          自定义子状态
+          <input name="custom_status" id="customSubStatusInput" placeholder="例如：等 HR 回复" />
         </label>
         <label>
           JD 内容
@@ -148,12 +181,20 @@
           <input name="apply_time" id="editApplyTime" type="date" />
         </label>
         <label>
-          当前状态
-          <select name="status" id="editStatusSelect"></select>
+          分类
+          <select name="job_type" id="editJobTypeSelect"></select>
         </label>
-        <label id="editCustomStatusField" hidden>
-          自定义状态
-          <input name="custom_status" id="editCustomStatusInput" placeholder="例如：等 HR 回复" />
+        <label>
+          阶段
+          <select name="current_stage" id="editStageSelect"></select>
+        </label>
+        <label>
+          子状态
+          <select name="status" id="editSubStatusSelect"></select>
+        </label>
+        <label id="editCustomSubStatusField" hidden>
+          自定义子状态
+          <input name="custom_status" id="editCustomSubStatusInput" placeholder="例如：等 HR 回复" />
         </label>
         <footer>
           <button value="cancel">取消</button>
@@ -180,6 +221,173 @@
         </form>
 
         <div class="timeline-list" id="timelineList"></div>
+      </div>
+    </dialog>
+
+    <dialog id="profileDialog">
+      <form method="dialog" class="dialog-form" id="profileForm">
+        <header>
+          <h3>新增 Resume Profile</h3>
+          <button value="cancel" class="icon-btn" aria-label="Close">×</button>
+        </header>
+        <label>
+          Profile 名称
+          <input name="name" required placeholder="例如：Data Analyst / Finance / General" />
+        </label>
+        <label>
+          Tags
+          <input name="tags" placeholder="例如：data, fintech, graduate" />
+        </label>
+        <label>
+          简历文件
+          <input name="resume_file" type="file" accept=".pdf,.doc,.docx,.txt" required />
+        </label>
+        <div class="profile-field-grid">
+          <label>
+            邮箱
+            <input name="email" type="email" />
+          </label>
+          <label>
+            LinkedIn
+            <input name="linkedin" type="url" />
+          </label>
+          <label>
+            GitHub
+            <input name="github" type="url" />
+          </label>
+          <label>
+            Portfolio
+            <input name="portfolio" type="url" />
+          </label>
+        </div>
+        <footer>
+          <button value="cancel">取消</button>
+          <button class="primary" value="default">上传保存</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="profileEditDialog">
+      <form method="dialog" class="dialog-form" id="profileEditForm">
+        <header>
+          <h3>编辑 Resume Profile</h3>
+          <button value="cancel" class="icon-btn" aria-label="Close">×</button>
+        </header>
+        <input name="id" id="profileEditId" type="hidden" />
+        <label>
+          Profile 名称
+          <input name="name" id="profileEditName" required />
+        </label>
+        <label>
+          Tags
+          <input name="tags" id="profileEditTags" />
+        </label>
+        <div class="profile-field-grid">
+          <label>
+            邮箱
+            <input name="email" id="profileEditEmail" type="email" />
+          </label>
+          <label>
+            LinkedIn
+            <input name="linkedin" id="profileEditLinkedin" type="url" />
+          </label>
+          <label>
+            GitHub
+            <input name="github" id="profileEditGithub" type="url" />
+          </label>
+          <label>
+            Portfolio
+            <input name="portfolio" id="profileEditPortfolio" type="url" />
+          </label>
+        </div>
+        <footer>
+          <button value="cancel">取消</button>
+          <button class="primary" value="default">保存修改</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="personalInfoDialog">
+      <form method="dialog" class="dialog-form" id="personalInfoForm">
+        <header>
+          <h3>编辑个人固定信息</h3>
+          <button value="cancel" class="icon-btn" aria-label="Close">×</button>
+        </header>
+        <div class="profile-field-grid">
+          <label>
+            姓名
+            <input name="full_name" id="personalFullName" />
+          </label>
+          <label>
+            First name
+            <input name="first_name" id="personalFirstName" />
+          </label>
+          <label>
+            Last name
+            <input name="last_name" id="personalLastName" />
+          </label>
+          <label>
+            电话
+            <input name="phone" id="personalPhone" />
+          </label>
+          <label>
+            年龄
+            <input name="age" id="personalAge" />
+          </label>
+          <label>
+            出生日期
+            <input name="date_of_birth" id="personalDateOfBirth" />
+          </label>
+          <label>
+            地点
+            <input name="location" id="personalLocation" />
+          </label>
+          <label>
+            家庭住址
+            <input name="address" id="personalAddress" />
+          </label>
+          <label>
+            城市
+            <input name="city" id="personalCity" />
+          </label>
+          <label>
+            邮编
+            <input name="postcode" id="personalPostcode" />
+          </label>
+          <label>
+            国家
+            <input name="country" id="personalCountry" />
+          </label>
+          <label>
+            签证状态
+            <input name="visa_status" id="personalVisaStatus" />
+          </label>
+          <label>
+            是否需要 sponsorship
+            <input name="needs_sponsorship" id="personalNeedsSponsorship" placeholder="Yes / No" />
+          </label>
+          <label>
+            Right to work
+            <input name="right_to_work" id="personalRightToWork" />
+          </label>
+        </div>
+        <footer>
+          <button value="cancel">取消</button>
+          <button class="primary" value="default">保存</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="profileDetailDialog">
+      <div class="dialog-form">
+        <header>
+          <h3 id="profileDetailTitle">Resume Detail</h3>
+          <button type="button" class="icon-btn" data-close-profile-detail aria-label="Close">×</button>
+        </header>
+        <div class="detail-actions">
+          <a id="profileDetailFile" class="choice-link" target="_blank" rel="noreferrer">打开原始简历文件</a>
+        </div>
+        <pre class="resume-text-preview" id="profileDetailText"></pre>
       </div>
     </dialog>
 

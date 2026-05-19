@@ -11,12 +11,17 @@
       <header>
         <div>
           <p class="eyebrow">Job Tracker</p>
-          <h1>保存当前岗位</h1>
+          <h1 id="popupTitle">保存当前岗位</h1>
         </div>
         <span id="serverStatus" class="status">Checking</span>
       </header>
 
-      <form id="captureForm">
+      <nav class="tabs">
+        <button type="button" class="tab active" data-tab="capture">保存岗位</button>
+        <button type="button" class="tab" data-tab="autofill">自动填入</button>
+      </nav>
+
+      <form id="captureForm" data-panel="capture">
         <label>
           公司
           <input name="company_name" id="companyInput" required />
@@ -25,6 +30,15 @@
         <label>
           岗位
           <input name="position_name" id="positionInput" required />
+        </label>
+
+        <label>
+          分类
+          <select name="job_type" id="jobTypeInput">
+            <option value="FULL_TIME">Full time</option>
+            <option value="PART_TIME">Part time</option>
+            <option value="INTERNSHIP">Internship</option>
+          </select>
         </label>
 
         <label>
@@ -51,6 +65,18 @@
           <button type="submit" class="primary" id="saveBtn">保存</button>
         </footer>
       </form>
+
+      <section class="autofill-panel" data-panel="autofill" hidden>
+        <div class="profile-list" id="profileList"></div>
+        <div class="hint" id="profileHint">
+          选择一份简历后填入基础字段；如果网站要求上传 PDF，请使用原始文件入口手动上传。
+        </div>
+        <footer>
+          <button type="button" id="reloadProfilesBtn">刷新 Profile</button>
+          <button type="button" class="primary" id="autofillBtn">自动填入</button>
+        </footer>
+        <div class="autofill-result" id="autofillResult"></div>
+      </section>
 
       <p id="message" class="message"></p>
     </main>

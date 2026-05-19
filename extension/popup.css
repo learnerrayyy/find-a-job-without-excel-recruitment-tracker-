@@ -86,7 +86,8 @@ label {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -147,4 +148,94 @@ button:disabled {
 
 .message.ok {
   color: var(--ok);
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.tab {
+  background: transparent;
+}
+
+.tab.active {
+  border-color: #99d3cb;
+  background: #e7f5f2;
+  color: var(--accent-dark);
+  font-weight: 750;
+}
+
+.autofill-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.autofill-result {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.autofill-result strong {
+  color: var(--text);
+}
+
+.profile-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.profile-option {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  padding: 10px;
+  text-align: left;
+}
+
+.profile-option button {
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+}
+
+.profile-option.active {
+  border-color: #99d3cb;
+  background: #e7f5f2;
+}
+
+.profile-option strong {
+  display: block;
+  font-size: 14px;
+}
+
+.profile-option span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile-file-link {
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.profile-file-link:hover {
+  text-decoration: underline;
 }

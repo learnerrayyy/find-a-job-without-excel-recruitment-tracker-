@@ -144,11 +144,25 @@ h3 {
   margin-top: 6px;
 }
 
-.summary-placeholder {
+.summary-placeholder,
+.summary-nav-button {
   border-radius: 6px;
   color: var(--muted);
   font-size: 13px;
   padding: 8px;
+}
+
+.summary-nav-button {
+  width: 100%;
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.summary-nav-button.active {
+  background: #d8e7e4;
+  color: #0f4f49;
 }
 
 .status-filter {
@@ -204,6 +218,194 @@ h3 {
   overflow: auto;
 }
 
+.summary-view {
+  min-height: 420px;
+}
+
+.profiles-view {
+  min-height: 420px;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.personal-info-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  margin-bottom: 14px;
+  padding: 14px;
+}
+
+.personal-info-panel h3,
+.personal-info-panel p {
+  margin-bottom: 4px;
+}
+
+.profile-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: 14px;
+}
+
+.profile-card h3 {
+  margin-bottom: 4px;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-row span {
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #475467;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.profile-fields {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.profile-fields div {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.profile-fields dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile-fields dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.profile-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.resume-text-preview {
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #344054;
+  margin: 0;
+  padding: 12px;
+  white-space: pre-wrap;
+}
+
+.summary-panel {
+  display: grid;
+  gap: 22px;
+}
+
+.summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-metrics div {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: 14px;
+}
+
+.summary-metrics span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.summary-metrics strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 26px;
+}
+
+.sankey-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  overflow-x: auto;
+  padding: 18px;
+}
+
+.sankey-diagram {
+  display: block;
+  min-width: 720px;
+  width: 100%;
+  height: auto;
+}
+
+.sankey-flow {
+  fill: none;
+  opacity: 0.42;
+  stroke-linecap: round;
+}
+
+.sankey-node rect {
+  fill: #ffffff;
+  stroke: #cfd8df;
+  stroke-width: 1.2;
+}
+
+.sankey-node.rejected rect {
+  fill: #fff8f7;
+  stroke: #f4aaa3;
+}
+
+.sankey-node.muted-node rect {
+  fill: #f9fafb;
+  stroke: #d0d5dd;
+}
+
+.sankey-node text {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sankey-node .node-count {
+  fill: var(--muted);
+  font-size: 15px;
+  font-weight: 800;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -229,6 +431,26 @@ th {
 
 tbody tr:hover {
   background: #f7fbfa;
+}
+
+tbody tr.rejected-row {
+  background: #f2f4f7;
+  color: #667085;
+}
+
+tbody tr.rejected-row:hover {
+  background: #eceff3;
+}
+
+tbody tr.rejected-row .job-link,
+tbody tr.rejected-row .timeline-button,
+tbody tr.rejected-row a {
+  color: #667085;
+}
+
+tbody tr.rejected-row select,
+tbody tr.rejected-row button:not(.danger-button) {
+  color: #667085;
 }
 
 .muted {
@@ -413,6 +635,10 @@ dialog::backdrop {
   .status-list {
     grid-template-columns: 1fr;
   }
+
+  .summary-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -420,8 +646,17 @@ dialog::backdrop {
     padding: 16px;
   }
 
+  .summary-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-field-grid {
+    grid-template-columns: 1fr;
+  }
+
   .toolbar,
-  .controls {
+  .controls,
+  .personal-info-panel {
     align-items: stretch;
     flex-direction: column;
   }

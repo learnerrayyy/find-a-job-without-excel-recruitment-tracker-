@@ -6,6 +6,11 @@ import re
 import shutil
 import sqlite3
 import sys
+import base64
+import binascii
+import zipfile
+import zlib
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -16,18 +21,16 @@ from urllib.parse import parse_qs, unquote, urlparse
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
 JOBS_DIR = DATA_DIR / "jobs"
+RESUMES_DIR = DATA_DIR / "resumes"
 DB_PATH = DATA_DIR / "tracker.db"
 WEB_DIR = ROOT / "web"
 
-DEFAULT_STATUS = "APPLIED"
-KNOWN_STATUSES = {
-    "APPLIED",
-    "OA_PENDING",
-    "OA_COMPLETED",
-    "INTERVIEW_PENDING",
-    "INTERVIEW_COMPLETED",
-    "REJECTED",
-}
+DEFAULT_STAGE = "APPLIED"
+DEFAULT_STATUS = "APPLIED_SUCCESS"
+KNOWN_STAGES = {"APPLIED", "ASSESSMENT", "INTERVIEW"}
+ALLOWED_RESUME_TYPES = {".pdf", ".docx", ".doc", ".txt"}
+DEFAULT_JOB_TYPE = "FULL_TIME"
+KNOWN_JOB_TYPES = {"PART_TIME", "FULL_TIME", "INTERNSHIP"}
 
 
 def normalize_status(value: str | None) -> str:
@@ -37,6 +40,20 @@ def normalize_status(value: str | None) -> str:
     if len(status) > 80:
         raise ValueError("Status is too long")
     return status
+
+
+def normalize_stage(value: str | None) -> str:
+    stage = (value or DEFAULT_STAGE).strip()
+    if stage not in KNOWN_STAGES:
+        raise ValueError("Invalid stage")
+    return stage
+
+
+def normalize_job_type(value: str | None) -> str:
+    job_type = (value or DEFAULT_JOB_TYPE).strip()
+    if job_type not in KNOWN_JOB_TYPES:
+        raise ValueError("Invalid job type")
+    return job_type
 
 
 def utc_now() -> str:
@@ -50,6 +67,15 @@ def slugify(value: str) -> str:
     return value or "job"
 
 
+def safe_json_loads(value: str | None, fallback: object) -> object:
+    if not value:
+        return fallback
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return fallback
+
+
 def db() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -60,6 +86,7 @@ def db() -> sqlite3.Connection:
 def init_db() -> None:
     DATA_DIR.mkdir(exist_ok=True)
     JOBS_DIR.mkdir(parents=True, exist_ok=True)
+    RESUMES_DIR.mkdir(parents=True, exist_ok=True)
     with db() as conn:
         conn.executescript(
             """
@@ -67,6 +94,7 @@ def init_db() -> None:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 company_name TEXT NOT NULL,
                 position_name TEXT NOT NULL,
+                job_type TEXT NOT NULL DEFAULT 'FULL_TIME',
                 source_url TEXT,
                 apply_url TEXT,
                 jd_local_path TEXT,
@@ -74,7 +102,7 @@ def init_db() -> None:
                 screenshot_local_path TEXT,
                 apply_time TEXT,
                 current_stage TEXT NOT NULL DEFAULT 'APPLIED',
-                status TEXT NOT NULL DEFAULT 'APPLIED',
+                status TEXT NOT NULL DEFAULT 'APPLIED_SUCCESS',
                 latest_email_id INTEGER,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
@@ -111,34 +139,72 @@ def init_db() -> None:
                     ON DELETE SET NULL
             );
 
+            CREATE TABLE IF NOT EXISTS resume_profiles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                tags TEXT NOT NULL DEFAULT '[]',
+                file_name TEXT NOT NULL,
+                file_type TEXT NOT NULL,
+                file_local_path TEXT NOT NULL,
+                extracted_text TEXT,
+                parsed_json TEXT NOT NULL DEFAULT '{}',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS user_profile (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                fields_json TEXT NOT NULL DEFAULT '{}',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
             CREATE INDEX IF NOT EXISTS idx_jobs_status
                 ON job_applications(status);
             CREATE INDEX IF NOT EXISTS idx_timeline_job
                 ON timeline_events(job_application_id);
+            CREATE INDEX IF NOT EXISTS idx_resume_profiles_name
+                ON resume_profiles(name);
             """
+        )
+        columns = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(job_applications)").fetchall()
+        }
+        if "job_type" not in columns:
+            conn.execute(
+                "ALTER TABLE job_applications ADD COLUMN job_type TEXT NOT NULL DEFAULT 'FULL_TIME'"
+            )
+        now = utc_now()
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO user_profile (id, fields_json, created_at, updated_at)
+            VALUES (1, '{}', ?, ?)
+            """,
+            (now, now),
         )
         conn.execute(
             """
             UPDATE job_applications
-            SET status = 'APPLIED',
+            SET status = 'APPLIED_SUCCESS',
                 current_stage = 'APPLIED'
-            WHERE status IN ('DISCOVERED', 'SAVED')
+            WHERE status IN ('DISCOVERED', 'SAVED', 'APPLIED')
             """
         )
         conn.execute(
             """
             UPDATE job_applications
             SET status = 'OA_PENDING',
-                current_stage = 'OA_PENDING'
-            WHERE status = 'OA'
+                current_stage = 'ASSESSMENT'
+            WHERE status IN ('OA', 'OA_PENDING', 'OA_COMPLETED')
             """
         )
         conn.execute(
             """
             UPDATE job_applications
             SET status = 'INTERVIEW_PENDING',
-                current_stage = 'INTERVIEW_PENDING'
-            WHERE status = 'INTERVIEW'
+                current_stage = 'INTERVIEW'
+            WHERE status IN ('INTERVIEW', 'INTERVIEW_PENDING', 'INTERVIEW_COMPLETED')
             """
         )
 
@@ -147,9 +213,199 @@ def row_to_dict(row: sqlite3.Row) -> dict:
     return {key: row[key] for key in row.keys()}
 
 
+def resume_row_to_dict(row: sqlite3.Row) -> dict:
+    data = row_to_dict(row)
+    data["tags"] = safe_json_loads(data.get("tags"), [])
+    data["parsed_json"] = safe_json_loads(data.get("parsed_json"), {})
+    return data
+
+
+SHARED_PROFILE_KEYS = (
+    "full_name",
+    "first_name",
+    "last_name",
+    "phone",
+    "age",
+    "date_of_birth",
+    "location",
+    "address",
+    "city",
+    "postcode",
+    "country",
+    "visa_status",
+    "needs_sponsorship",
+    "right_to_work",
+)
+
+
+RESUME_PROFILE_KEYS = (
+    "email",
+    "linkedin",
+    "github",
+    "portfolio",
+)
+
+
+def get_user_profile_fields(conn: sqlite3.Connection) -> dict:
+    row = conn.execute("SELECT fields_json FROM user_profile WHERE id = 1").fetchone()
+    if not row:
+        return {}
+    data = safe_json_loads(row["fields_json"], {})
+    return data if isinstance(data, dict) else {}
+
+
+def clean_profile_fields(payload: dict, keys: tuple[str, ...]) -> dict:
+    return {key: str(payload.get(key) or "").strip() for key in keys if key in payload}
+
+
+def normalize_tags(value: object) -> list[str]:
+    if isinstance(value, str):
+        parts = re.split(r"[,，\n]+", value)
+    elif isinstance(value, list):
+        parts = [str(item) for item in value]
+    else:
+        parts = []
+    tags = []
+    seen = set()
+    for part in parts:
+        tag = part.strip()
+        key = tag.lower()
+        if tag and key not in seen:
+            tags.append(tag[:40])
+            seen.add(key)
+    return tags[:12]
+
+
+def extract_docx_text(path: Path) -> str:
+    with zipfile.ZipFile(path) as archive:
+        xml_body = archive.read("word/document.xml")
+    root = ET.fromstring(xml_body)
+    namespace = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+    paragraphs = []
+    for paragraph in root.findall(".//w:p", namespace):
+        text = "".join(node.text or "" for node in paragraph.findall(".//w:t", namespace))
+        if text.strip():
+            paragraphs.append(text.strip())
+    return "\n".join(paragraphs)
+
+
+def extract_pdf_text(path: Path) -> str:
+    raw = path.read_bytes()
+    chunks = []
+    for stream_match in re.finditer(rb"stream\r?\n(.*?)\r?\nendstream", raw, flags=re.S):
+        stream = stream_match.group(1)
+        prefix = raw[max(0, stream_match.start() - 240):stream_match.start()]
+        if b"FlateDecode" in prefix:
+            try:
+                stream = zlib.decompress(stream)
+            except zlib.error:
+                pass
+        chunks.append(stream.decode("latin-1", errors="ignore"))
+    chunks.append(raw.decode("latin-1", errors="ignore"))
+    text = "\n".join(chunks)
+    chunks = []
+    for match in re.finditer(r"\((.*?)\)\s*Tj", text, flags=re.S):
+        chunks.append(match.group(1))
+    for match in re.finditer(r"\[(.*?)\]\s*TJ", text, flags=re.S):
+        chunks.extend(re.findall(r"\((.*?)\)", match.group(1), flags=re.S))
+    if not chunks:
+        chunks = re.findall(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}|https?://[^\s<>()]+|[A-Za-z][A-Za-z0-9 ,.'@:/+\-]{8,}", text)
+    cleaned = "\n".join(chunk.replace(r"\(", "(").replace(r"\)", ")") for chunk in chunks)
+    return re.sub(r"\s+\n", "\n", cleaned).strip()
+
+
+def extract_binary_text(path: Path) -> str:
+    text = path.read_bytes().decode("latin-1", errors="ignore")
+    chunks = re.findall(
+        r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}|https?://[^\s<>()]+|[A-Za-z][A-Za-z0-9 ,.'@:/+\-]{8,}",
+        text,
+    )
+    return "\n".join(chunk.strip() for chunk in chunks if chunk.strip())
+
+
+def extract_resume_text(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".docx":
+        return extract_docx_text(path)
+    if suffix == ".pdf":
+        return extract_pdf_text(path)
+    if suffix == ".txt":
+        return path.read_text(encoding="utf-8", errors="ignore")
+    if suffix == ".doc":
+        return extract_binary_text(path)
+    return ""
+
+
+def infer_resume_fields(text: str, payload: dict | None = None) -> dict:
+    payload = payload or {}
+    email_matches = re.findall(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}", text)
+    email_guess = max(email_matches, key=len) if email_matches else ""
+    phone_match = re.search(r"(?:\+?\d[\d\s().-]{7,}\d)", text)
+    linkedin_match = re.search(r"https?://(?:www\.)?linkedin\.com/[^\s)>\]]+", text, re.I)
+    github_match = re.search(r"https?://(?:www\.)?github\.com/[^\s)>\]]+", text, re.I)
+    portfolio_match = re.search(r"https?://(?!.*(?:linkedin|github)\.com)[^\s)>\]]+", text, re.I)
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    name_guess = ""
+    for line in lines[:8]:
+        if "@" in line or len(line) > 70:
+            continue
+        if re.fullmatch(r"[A-Za-z][A-Za-z .'-]{2,}|[\u4e00-\u9fff]{2,8}", line):
+            name_guess = line
+            break
+    fields = {
+        "full_name": payload.get("full_name", "").strip() or name_guess,
+        "email": payload.get("email", "").strip() or email_guess,
+        "phone": payload.get("phone", "").strip() or (phone_match.group(0).strip() if phone_match else ""),
+        "location": payload.get("location", "").strip(),
+        "linkedin": payload.get("linkedin", "").strip() or (linkedin_match.group(0) if linkedin_match else ""),
+        "github": payload.get("github", "").strip() or (github_match.group(0) if github_match else ""),
+        "portfolio": payload.get("portfolio", "").strip() or (portfolio_match.group(0) if portfolio_match else ""),
+    }
+    if fields["full_name"]:
+        parts = fields["full_name"].split()
+        fields["first_name"] = payload.get("first_name", "").strip() or parts[0]
+        fields["last_name"] = payload.get("last_name", "").strip() or (" ".join(parts[1:]) if len(parts) > 1 else "")
+    else:
+        fields["first_name"] = payload.get("first_name", "").strip()
+        fields["last_name"] = payload.get("last_name", "").strip()
+    return fields
+
+
+def split_resume_and_shared_fields(fields: dict) -> tuple[dict, dict]:
+    resume_fields = {key: fields.get(key, "") for key in RESUME_PROFILE_KEYS if fields.get(key)}
+    shared_fields = {key: fields.get(key, "") for key in SHARED_PROFILE_KEYS if fields.get(key)}
+    return resume_fields, shared_fields
+
+
+def save_resume_file(payload: dict) -> tuple[str, str, str]:
+    file_name = Path(payload.get("file_name", "")).name
+    suffix = Path(file_name).suffix.lower()
+    if suffix not in ALLOWED_RESUME_TYPES:
+        raise ValueError("Resume file must be PDF, DOCX, DOC, or TXT")
+    raw_base64 = payload.get("file_content_base64", "")
+    if "," in raw_base64:
+        raw_base64 = raw_base64.split(",", 1)[1]
+    try:
+        content = base64.b64decode(raw_base64, validate=True)
+    except (binascii.Error, ValueError) as error:
+        raise ValueError("Invalid resume file content") from error
+    if not content:
+        raise ValueError("Resume file is empty")
+    if len(content) > 8 * 1024 * 1024:
+        raise ValueError("Resume file must be smaller than 8 MB")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    folder = RESUMES_DIR / f"{slugify(payload.get('name', 'resume'))}_{timestamp}"
+    folder.mkdir(parents=True, exist_ok=True)
+    target = folder / f"resume{suffix}"
+    target.write_bytes(content)
+    return file_name, suffix.lstrip("."), str(target.relative_to(ROOT))
+
+
 def markdown_for_job(payload: dict) -> str:
     company = payload.get("company_name", "").strip()
     position = payload.get("position_name", "").strip()
+    job_type = normalize_job_type(payload.get("job_type"))
+    stage = normalize_stage(payload.get("current_stage"))
     status = normalize_status(payload.get("status"))
     source_url = payload.get("source_url", "").strip()
     apply_url = payload.get("apply_url", "").strip()
@@ -160,7 +416,9 @@ def markdown_for_job(payload: dict) -> str:
             "---",
             f"company: {company}",
             f"position: {position}",
+            f"job_type: {job_type}",
             f"status: {status}",
+            f"stage: {stage}",
             f"source_url: {source_url}",
             f"apply_url: {apply_url}",
             "---",
@@ -207,7 +465,7 @@ def job_matches_search(job: dict, search: str) -> bool:
         return True
     haystack = " ".join(
         str(job.get(key) or "")
-        for key in ("company_name", "position_name", "source_url", "apply_url")
+        for key in ("company_name", "position_name", "job_type", "source_url", "apply_url")
     ).lower()
     needle = search.lower()
     if needle in haystack:
@@ -262,6 +520,20 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/jobs":
             self.list_jobs(parse_qs(parsed.query))
             return
+        if path == "/api/resume-profiles":
+            self.list_resume_profiles()
+            return
+        if path == "/api/user-profile":
+            self.get_user_profile()
+            return
+        if path.startswith("/api/resume-profiles/"):
+            parts = path.strip("/").split("/")
+            if len(parts) == 3 and parts[2].isdigit():
+                self.get_resume_profile(int(parts[2]))
+                return
+            if len(parts) == 4 and parts[2].isdigit() and parts[3] == "file":
+                self.serve_resume_file(int(parts[2]))
+                return
         if path.startswith("/api/jobs/"):
             parts = path.strip("/").split("/")
             if len(parts) == 3 and parts[2].isdigit():
@@ -285,6 +557,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/jobs":
             self.create_job()
             return
+        if path == "/api/resume-profiles":
+            self.create_resume_profile()
+            return
         if path.startswith("/api/jobs/"):
             parts = path.strip("/").split("/")
             if len(parts) == 4 and parts[2].isdigit() and parts[3] == "timeline":
@@ -298,6 +573,17 @@ class Handler(BaseHTTPRequestHandler):
         parts = path.strip("/").split("/")
         if len(parts) == 3 and parts[0] == "api" and parts[1] == "jobs" and parts[2].isdigit():
             self.update_job(int(parts[2]))
+            return
+        if (
+            len(parts) == 3
+            and parts[0] == "api"
+            and parts[1] == "resume-profiles"
+            and parts[2].isdigit()
+        ):
+            self.update_resume_profile(int(parts[2]))
+            return
+        if len(parts) == 2 and parts[0] == "api" and parts[1] == "user-profile":
+            self.update_user_profile()
             return
         self.send_error_json("Not found", HTTPStatus.NOT_FOUND)
 
@@ -316,6 +602,14 @@ class Handler(BaseHTTPRequestHandler):
                 if str(target).startswith(str(JOBS_DIR.resolve())) and target.exists():
                     shutil.rmtree(target.parent, ignore_errors=True)
             self.send_json({"ok": True})
+            return
+        if (
+            len(parts) == 3
+            and parts[0] == "api"
+            and parts[1] == "resume-profiles"
+            and parts[2].isdigit()
+        ):
+            self.delete_resume_profile(int(parts[2]))
             return
         self.send_error_json("Not found", HTTPStatus.NOT_FOUND)
 
@@ -352,7 +646,11 @@ class Handler(BaseHTTPRequestHandler):
         if status:
             sql += " AND j.status = ?"
             params.append(status)
-        sql += " ORDER BY j.updated_at DESC"
+        sql += """
+            ORDER BY
+                COALESCE(NULLIF(j.apply_time, ''), j.created_at) DESC,
+                j.id DESC
+        """
         with db() as conn:
             rows = conn.execute(sql, params).fetchall()
         jobs = [row_to_dict(row) for row in rows]
@@ -376,32 +674,40 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error_json("company_name and position_name are required")
             return
         try:
+            stage = normalize_stage(payload.get("current_stage"))
             status = normalize_status(payload.get("status"))
+            job_type = normalize_job_type(payload.get("job_type"))
         except ValueError as error:
             self.send_error_json(str(error))
             return
 
-        md_path, html_path = save_job_files({**payload, "status": status})
+        md_path, html_path = save_job_files({
+            **payload,
+            "job_type": job_type,
+            "current_stage": stage,
+            "status": status,
+        })
         now = utc_now()
         with db() as conn:
             cur = conn.execute(
                 """
                 INSERT INTO job_applications (
-                    company_name, position_name, source_url, apply_url,
+                    company_name, position_name, job_type, source_url, apply_url,
                     jd_local_path, html_local_path, apply_time,
                     current_stage, status, created_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     company,
                     position,
+                    job_type,
                     payload.get("source_url", "").strip(),
                     payload.get("apply_url", "").strip(),
                     md_path,
                     html_path,
                     payload.get("apply_time", "").strip(),
-                    status,
+                    stage,
                     status,
                     now,
                     now,
@@ -428,9 +734,23 @@ class Handler(BaseHTTPRequestHandler):
             "source_url",
             "apply_url",
             "apply_time",
+            "job_type",
+            "current_stage",
             "status",
         }
         updates = {key: payload[key] for key in allowed if key in payload}
+        if "current_stage" in updates:
+            try:
+                updates["current_stage"] = normalize_stage(updates["current_stage"])
+            except ValueError as error:
+                self.send_error_json(str(error))
+                return
+        if "job_type" in updates:
+            try:
+                updates["job_type"] = normalize_job_type(updates["job_type"])
+            except ValueError as error:
+                self.send_error_json(str(error))
+                return
         if "status" in updates:
             try:
                 updates["status"] = normalize_status(updates["status"])
@@ -441,21 +761,29 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error_json("No supported fields to update")
             return
         updates["updated_at"] = utc_now()
-        if "status" in updates:
-            updates["current_stage"] = updates["status"]
 
         assignments = ", ".join([f"{key} = ?" for key in updates.keys()])
         params = list(updates.values()) + [job_id]
         with db() as conn:
             existing = conn.execute(
-                "SELECT status FROM job_applications WHERE id = ?", (job_id,)
+                "SELECT current_stage, status FROM job_applications WHERE id = ?", (job_id,)
             ).fetchone()
             if not existing:
                 self.send_error_json("Job not found", HTTPStatus.NOT_FOUND)
                 return
             conn.execute(f"UPDATE job_applications SET {assignments} WHERE id = ?", params)
-            if "status" in updates and updates["status"] != existing["status"]:
+            stage_changed = (
+                "current_stage" in updates
+                and updates["current_stage"] != existing["current_stage"]
+            )
+            status_changed = "status" in updates and updates["status"] != existing["status"]
+            if stage_changed or status_changed:
                 now = utc_now()
+                title_parts = []
+                if stage_changed:
+                    title_parts.append(f"阶段更新为 {updates['current_stage']}")
+                if status_changed:
+                    title_parts.append(f"子状态更新为 {updates['status']}")
                 conn.execute(
                     """
                     INSERT INTO timeline_events (
@@ -467,7 +795,7 @@ class Handler(BaseHTTPRequestHandler):
                     (
                         job_id,
                         "STATUS_CHANGE",
-                        f"状态更新为 {updates['status']}",
+                        "，".join(title_parts),
                         now,
                         "manual",
                         "",
@@ -561,6 +889,168 @@ class Handler(BaseHTTPRequestHandler):
         body = target.read_bytes()
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def list_resume_profiles(self) -> None:
+        with db() as conn:
+            rows = conn.execute(
+                """
+                SELECT *
+                FROM resume_profiles
+                ORDER BY updated_at DESC
+                """
+            ).fetchall()
+        self.send_json([resume_row_to_dict(row) for row in rows])
+
+    def get_resume_profile(self, profile_id: int) -> None:
+        with db() as conn:
+            row = conn.execute(
+                "SELECT * FROM resume_profiles WHERE id = ?", (profile_id,)
+            ).fetchone()
+        if not row:
+            self.send_error_json("Resume profile not found", HTTPStatus.NOT_FOUND)
+            return
+        self.send_json(resume_row_to_dict(row))
+
+    def create_resume_profile(self) -> None:
+        payload = self.read_json()
+        name = payload.get("name", "").strip()
+        if not name:
+            self.send_error_json("name is required")
+            return
+        if not payload.get("file_name") or not payload.get("file_content_base64"):
+            self.send_error_json("resume file is required")
+            return
+        try:
+            file_name, file_type, file_path = save_resume_file(payload)
+            absolute_path = ROOT / file_path
+            extracted_text = extract_resume_text(absolute_path)
+        except (ValueError, zipfile.BadZipFile, KeyError, ET.ParseError) as error:
+            self.send_error_json(str(error))
+            return
+        parsed, shared_candidates = split_resume_and_shared_fields(
+            infer_resume_fields(extracted_text, payload)
+        )
+        tags = normalize_tags(payload.get("tags"))
+        now = utc_now()
+        with db() as conn:
+            user_fields = get_user_profile_fields(conn)
+            changed_user_fields = False
+            for key, value in shared_candidates.items():
+                if value and not user_fields.get(key):
+                    user_fields[key] = value
+                    changed_user_fields = True
+            if changed_user_fields:
+                conn.execute(
+                    "UPDATE user_profile SET fields_json = ?, updated_at = ? WHERE id = 1",
+                    (json.dumps(user_fields, ensure_ascii=False), now),
+                )
+            cur = conn.execute(
+                """
+                INSERT INTO resume_profiles (
+                    name, tags, file_name, file_type, file_local_path,
+                    extracted_text, parsed_json, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    name,
+                    json.dumps(tags, ensure_ascii=False),
+                    file_name,
+                    file_type,
+                    file_path,
+                    extracted_text,
+                    json.dumps(parsed, ensure_ascii=False),
+                    now,
+                    now,
+                ),
+            )
+            profile_id = cur.lastrowid
+        self.get_resume_profile(profile_id)
+
+    def update_resume_profile(self, profile_id: int) -> None:
+        payload = self.read_json()
+        with db() as conn:
+            row = conn.execute(
+                "SELECT * FROM resume_profiles WHERE id = ?", (profile_id,)
+            ).fetchone()
+            if not row:
+                self.send_error_json("Resume profile not found", HTTPStatus.NOT_FOUND)
+                return
+            current = resume_row_to_dict(row)
+            parsed = dict(current.get("parsed_json") or {})
+            for key, value in clean_profile_fields(payload, RESUME_PROFILE_KEYS).items():
+                parsed[key] = value
+            updates = {
+                "updated_at": utc_now(),
+                "parsed_json": json.dumps(parsed, ensure_ascii=False),
+            }
+            if "name" in payload:
+                name = payload.get("name", "").strip()
+                if not name:
+                    self.send_error_json("name is required")
+                    return
+                updates["name"] = name
+            if "tags" in payload:
+                updates["tags"] = json.dumps(normalize_tags(payload.get("tags")), ensure_ascii=False)
+            assignments = ", ".join([f"{key} = ?" for key in updates.keys()])
+            conn.execute(
+                f"UPDATE resume_profiles SET {assignments} WHERE id = ?",
+                list(updates.values()) + [profile_id],
+            )
+        self.get_resume_profile(profile_id)
+
+    def get_user_profile(self) -> None:
+        with db() as conn:
+            fields = get_user_profile_fields(conn)
+        self.send_json(fields)
+
+    def update_user_profile(self) -> None:
+        payload = self.read_json()
+        updates = clean_profile_fields(payload, SHARED_PROFILE_KEYS)
+        with db() as conn:
+            fields = get_user_profile_fields(conn)
+            fields.update(updates)
+            fields = {key: value for key, value in fields.items() if str(value).strip()}
+            now = utc_now()
+            conn.execute(
+                "UPDATE user_profile SET fields_json = ?, updated_at = ? WHERE id = 1",
+                (json.dumps(fields, ensure_ascii=False), now),
+            )
+        self.send_json(fields)
+
+    def delete_resume_profile(self, profile_id: int) -> None:
+        with db() as conn:
+            row = conn.execute(
+                "SELECT file_local_path FROM resume_profiles WHERE id = ?", (profile_id,)
+            ).fetchone()
+            conn.execute("DELETE FROM resume_profiles WHERE id = ?", (profile_id,))
+        if row and row["file_local_path"]:
+            target = (ROOT / row["file_local_path"]).resolve()
+            if str(target).startswith(str(RESUMES_DIR.resolve())) and target.exists():
+                shutil.rmtree(target.parent, ignore_errors=True)
+        self.send_json({"ok": True})
+
+    def serve_resume_file(self, profile_id: int) -> None:
+        with db() as conn:
+            row = conn.execute(
+                "SELECT file_name, file_local_path FROM resume_profiles WHERE id = ?",
+                (profile_id,),
+            ).fetchone()
+        if not row or not row["file_local_path"]:
+            self.send_error_json("Resume file not found", HTTPStatus.NOT_FOUND)
+            return
+        target = (ROOT / row["file_local_path"]).resolve()
+        if not str(target).startswith(str(RESUMES_DIR.resolve())) or not target.exists():
+            self.send_error_json("Resume file missing", HTTPStatus.NOT_FOUND)
+            return
+        body = target.read_bytes()
+        content_type = mimetypes.guess_type(row["file_name"])[0] or "application/octet-stream"
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Disposition", f"inline; filename={row['file_name']}")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
