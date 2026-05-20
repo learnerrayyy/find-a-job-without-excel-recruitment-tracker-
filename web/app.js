@@ -3,47 +3,47 @@ const JOB_TYPE_OPTIONS = ["PART_TIME", "FULL_TIME", "INTERNSHIP"];
 const STAGE_OPTIONS = ["APPLIED", "ASSESSMENT", "INTERVIEW"];
 const MODULE_VIEWS = {
   WEEKLY_REVIEW: {
-    title: "Weekly Review",
+    title: "每周复盘",
     summary: "每周复盘投递进展、停滞岗位和下周行动。",
     status: "Planned",
     metrics: ["本周新增投递", "本周状态变化", "超过 7 天未更新", "下周重点"],
     cards: [
-      ["Activity digest", "汇总本周新增岗位、OA、面试、拒绝和手动 Timeline。"],
-      ["Stale applications", "找出长时间没有更新的岗位，提醒是否 follow up 或归档。"],
-      ["Next actions", "把需要准备、跟进、复盘的事项整理成一页。"],
+      ["本周活动汇总", "汇总本周新增岗位、OA、面试、拒绝和手动 Timeline。"],
+      ["停滞岗位", "找出长时间没有更新的岗位，提醒是否 follow up 或归档。"],
+      ["下周行动清单", "把需要准备、跟进、复盘的事项整理成一页。"],
     ],
   },
   QUESTION_BANK: {
-    title: "Application Question Bank",
+    title: "申请题答案库",
     summary: "保存申请表常见问题和可复用答案版本。",
     status: "New feature",
     metrics: ["问题分类", "答案模板", "岗位标签", "复制使用"],
     cards: [
-      ["Common questions", "例如 sponsorship、salary expectation、notice period、why this company。"],
-      ["Answer variants", "同一个问题可保存正式版、简短版、技术岗版、校招版。"],
-      ["Future autofill bridge", "后续可和插件连接，但模块本身先作为答案知识库独立存在。"],
+      ["常见申请题", "例如 sponsorship、salary expectation、notice period、why this company。"],
+      ["答案多版本", "同一个问题可保存正式版、简短版、技术岗版、校招版。"],
+      ["未来自动填表接口", "后续可和插件连接，但模块本身先作为答案知识库独立存在。"],
     ],
   },
   INTERVIEW_STORIES: {
-    title: "Interview Story Library",
+    title: "面试故事库",
     summary: "用 STAR 结构管理可复用的面试故事。",
     status: "New feature",
-    metrics: ["STAR stories", "能力标签", "岗位关联", "面试复盘"],
+    metrics: ["STAR 故事", "能力标签", "岗位关联", "面试复盘"],
     cards: [
-      ["Story assets", "沉淀 leadership、teamwork、conflict、ownership 等故事素材。"],
-      ["Tagged retrieval", "面试前按能力标签快速筛选能讲的案例。"],
-      ["Practice notes", "记录每次面试后哪些故事有效、哪些需要重写。"],
+      ["故事素材", "沉淀 leadership、teamwork、conflict、ownership 等故事素材。"],
+      ["按标签检索", "面试前按能力标签快速筛选能讲的案例。"],
+      ["面试复盘备注", "记录每次面试后哪些故事有效、哪些需要重写。"],
     ],
   },
   COMPANY_NOTES: {
-    title: "Company Research Notes",
+    title: "公司研究笔记",
     summary: "以公司为中心管理研究笔记和关联岗位。",
     status: "New feature",
-    metrics: ["公司档案", "关联岗位", "Why company", "面试重点"],
+    metrics: ["公司档案", "关联岗位", "为什么感兴趣", "面试重点"],
     cards: [
-      ["Company profile", "记录业务、产品、文化、新闻、风险点和个人兴趣点。"],
-      ["Role connections", "同一家公司多个岗位共用研究资料，减少重复准备。"],
-      ["Interview context", "把面试前需要复习的公司信息集中到一个地方。"],
+      ["公司档案", "记录业务、产品、文化、新闻、风险点和个人兴趣点。"],
+      ["关联岗位", "同一家公司多个岗位共用研究资料，减少重复准备。"],
+      ["面试重点", "把面试前需要复习的公司信息集中到一个地方。"],
     ],
   },
   EMAIL_SYNC: {
@@ -52,9 +52,9 @@ const MODULE_VIEWS = {
     status: "Planned",
     metrics: ["Gmail", "Outlook", "邮件分类", "人工确认"],
     cards: [
-      ["Inbox import", "从邮箱拉取确认、OA、面试、拒信等求职邮件。"],
-      ["Application matching", "先做半自动匹配，避免同公司多岗位造成误判。"],
-      ["Timeline updates", "确认后写入 Timeline，并更新当前阶段或子状态。"],
+      ["邮件导入", "从邮箱拉取确认、OA、面试、拒信等求职邮件。"],
+      ["岗位匹配", "先做半自动匹配，避免同公司多岗位造成误判。"],
+      ["Timeline 更新", "确认后写入 Timeline，并更新当前阶段或子状态。"],
     ],
   },
   AI_ASSISTANT: {
@@ -63,9 +63,9 @@ const MODULE_VIEWS = {
     status: "Planned",
     metrics: ["JD 摘要", "邮件识别", "匹配评分", "行动建议"],
     cards: [
-      ["JD understanding", "提炼岗位要求、关键词、缺口和准备重点。"],
-      ["Email classification", "识别 OA、面试、拒信、follow-up 等邮件类型。"],
-      ["Workflow suggestions", "根据当前状态给出下一步操作建议。"],
+      ["JD 解析", "提炼岗位要求、关键词、缺口和准备重点。"],
+      ["邮件识别", "识别 OA、面试、拒信、follow-up 等邮件类型。"],
+      ["流程建议", "根据当前状态给出下一步操作建议。"],
     ],
   },
   COVER_LETTERS: {
@@ -74,9 +74,9 @@ const MODULE_VIEWS = {
     status: "Planned",
     metrics: ["草稿", "版本", "岗位关联", "导出"],
     cards: [
-      ["Draft workspace", "把 JD、公司笔记和简历 Profile 组合成一版初稿。"],
-      ["Version history", "保留不同语气和不同岗位重点的版本。"],
-      ["Reusable snippets", "沉淀可复用段落，减少重复写作。"],
+      ["草稿工作区", "把 JD、公司笔记和简历 Profile 组合成一版初稿。"],
+      ["版本历史", "保留不同语气和不同岗位重点的版本。"],
+      ["可复用段落", "沉淀可复用段落，减少重复写作。"],
     ],
   },
   AUTO_APPLY: {
@@ -85,9 +85,9 @@ const MODULE_VIEWS = {
     status: "Long-term",
     metrics: ["表单填入", "材料选择", "投递确认", "人工审核"],
     cards: [
-      ["Guarded automation", "自动填表和材料选择需要人工确认后提交。"],
-      ["Site playbooks", "针对不同招聘系统维护独立规则。"],
-      ["Audit trail", "每次自动化操作都记录到 Timeline，方便追踪。"],
+      ["人工确认投递", "自动填表和材料选择需要人工确认后提交。"],
+      ["平台规则集", "针对不同招聘系统维护独立规则。"],
+      ["操作日志", "每次自动化操作都记录到 Timeline，方便追踪。"],
     ],
   },
 };
@@ -244,6 +244,92 @@ const I18N = {
     sankeyAssessment: "笔试",
     sankeyInterview: "面试",
     sankeyRejected: "被拒",
+    weeklyReviewPeriod: "本周动态（过去 7 天）",
+    newThisWeek: "本周新增岗位",
+    recentTimeline: "近期动态",
+    staleApps: "待跟进（7天+未更新）",
+    noNewApps: "本周没有新增岗位",
+    noRecentTimeline: "暂无近期动态",
+    noStaleApps: "没有超过 7 天未更新的岗位",
+    lastUpdated: "最后更新",
+    addQuestion: "+ 新增问题",
+    editQuestion: "编辑问题",
+    questionTextLabel: "问题描述",
+    questionCategoryLabel: "问题分类",
+    answersLabel: "参考答案",
+    addAnswerBtn: "+ 添加答案",
+    answerLabelField: "版本名称",
+    answerContentField: "答案内容",
+    noAnswers: "暂无答案，点击添加。",
+    noQuestions: "暂无问题，先新增一条。",
+    deleteQuestionConfirm: "确认删除此问题及所有答案吗？",
+    questionCount: "{count} 个问题",
+    addStory: "+ 新增故事",
+    editStory: "编辑故事",
+    storyTitleField: "故事标题",
+    storySituationLabel: "背景 (Situation)",
+    storyTaskLabel: "任务 (Task)",
+    storyActionLabel: "行动 (Action)",
+    storyResultLabel: "结果 (Result)",
+    storyNotesLabel: "面试备注",
+    noStories: "暂无故事，先新增一条。",
+    deleteStoryConfirm: "确认删除此故事吗？",
+    storyCount: "{count} 个故事",
+    addCompanyNote: "+ 新增公司笔记",
+    editCompanyNote: "编辑公司笔记",
+    industryLabel: "行业",
+    overviewLabel: "公司介绍",
+    cultureLabel: "文化 / 工作氛围",
+    whyInterestedLabel: "为什么感兴趣",
+    interviewFocusLabel: "面试重点",
+    otherNotesLabel: "其他备注",
+    linkedJobs: "关联岗位",
+    noLinkedJobs: "暂无关联岗位",
+    noCompanyNotes: "暂无公司笔记，先新增一条。",
+    deleteCompanyNoteConfirm: "确认删除此公司笔记吗？",
+    companyNoteCount: "{count} 个公司笔记",
+    phQuestionCategory: "例如：motivation、behavioral、technical",
+    phQuestionTags: "例如：常见题、HR 面",
+    phStoryTitle: "例如：领导团队完成紧急项目",
+    phStoryTags: "例如：leadership、teamwork",
+    phStorySituation: "描述当时的背景和情况",
+    phStoryTask: "你的任务或责任是什么",
+    phStoryAction: "你采取了哪些具体行动",
+    phStoryResult: "最终结果如何，有什么量化数据",
+    phStoryNotes: "例如：在某公司面试中使用，反应良好",
+    phCompanyIndustry: "例如：Tech、Finance、Consulting",
+    phCompanyTags: "例如：大公司、初创",
+    phCompanyOverview: "主营业务、产品、规模",
+    phCompanyCulture: "团队氛围、工作方式、价值观",
+    phCompanyWhy: "吸引你的原因，面试时用到",
+    phCompanyFocus: "需要重点准备的方向",
+    back: "← 返回",
+    cardView: "卡片",
+    tableView: "表格",
+    filterPlaceholder: "筛选...",
+    hintQuestion: "写下这道面试题，可以是行为类、技术类或动机类问题",
+    hintCategory: "用于分组和筛选，例如：behavioral、technical、motivation",
+    hintAnswers: "可以为同一道题准备多个版本的回答，针对不同公司或场景使用",
+    hintTags: "用逗号分隔，例如：常见题、HR面、leadership",
+    hintStoryTitle: "简短概括这个故事，例如：带领团队完成紧急项目",
+    hintSituation: "描述当时的背景、项目规模、团队情况和你的角色",
+    hintTask: "你的具体目标或职责是什么",
+    hintAction: "你采取的具体行动步骤，越细节越好，突出你的主观能动性",
+    hintResult: "最终结果，尽量包含量化数据，例如：提升效率30%、节省成本",
+    hintStoryNotes: "备注使用场景，例如：在某公司面试中用过，效果好",
+    hintCompanyName: "与投递记录中的公司名保持一致，系统将自动关联岗位",
+    hintIndustry: "例如：Tech、Finance、Healthcare",
+    hintOverview: "主营业务、主要产品、公司规模和发展阶段",
+    hintCulture: "团队氛围、工作方式、价值观，可从Glassdoor或官网了解",
+    hintWhyInterested: "面试时几乎必问，事先整理好，和公司价值观对齐",
+    hintInterviewFocus: "根据JD和同类公司经验，总结这家公司面试的侧重方向",
+    prepLabel: "面试备考",
+    prepBtn: "备考",
+    prepQuestionsSection: "题目清单",
+    prepStoriesSection: "故事清单",
+    prepProgress: "{q}/{qTotal} 题已准备 · {s}/{sTotal} 个故事已准备",
+    prepNoQuestions: "题库为空，请先在「题库」中添加题目。",
+    prepNoStories: "故事库为空，请先在「故事库」中添加故事。",
   },
   en: {
     navTrack: "Track",
@@ -366,6 +452,92 @@ const I18N = {
     sankeyAssessment: "Assessment",
     sankeyInterview: "Interview",
     sankeyRejected: "Rejected",
+    weeklyReviewPeriod: "This week (past 7 days)",
+    newThisWeek: "New applications this week",
+    recentTimeline: "Recent activity",
+    staleApps: "Follow up needed (7+ days)",
+    noNewApps: "No new applications this week",
+    noRecentTimeline: "No recent activity",
+    noStaleApps: "No stale applications",
+    lastUpdated: "Last updated",
+    addQuestion: "+ New question",
+    editQuestion: "Edit question",
+    questionTextLabel: "Question",
+    questionCategoryLabel: "Category",
+    answersLabel: "Answers",
+    addAnswerBtn: "+ Add answer",
+    answerLabelField: "Label",
+    answerContentField: "Answer",
+    noAnswers: "No answers yet. Click to add.",
+    noQuestions: "No questions yet. Add one to get started.",
+    deleteQuestionConfirm: "Delete this question and all its answers?",
+    questionCount: "{count} questions",
+    addStory: "+ New story",
+    editStory: "Edit story",
+    storyTitleField: "Story title",
+    storySituationLabel: "Situation",
+    storyTaskLabel: "Task",
+    storyActionLabel: "Action",
+    storyResultLabel: "Result",
+    storyNotesLabel: "Interview notes",
+    noStories: "No stories yet. Add one to get started.",
+    deleteStoryConfirm: "Delete this story?",
+    storyCount: "{count} stories",
+    addCompanyNote: "+ New company note",
+    editCompanyNote: "Edit company note",
+    industryLabel: "Industry",
+    overviewLabel: "Overview",
+    cultureLabel: "Culture",
+    whyInterestedLabel: "Why interested",
+    interviewFocusLabel: "Interview focus",
+    otherNotesLabel: "Other notes",
+    linkedJobs: "Linked roles",
+    noLinkedJobs: "No linked roles",
+    noCompanyNotes: "No company notes yet. Add one to get started.",
+    deleteCompanyNoteConfirm: "Delete this company note?",
+    companyNoteCount: "{count} companies",
+    phQuestionCategory: "e.g. motivation, behavioral, technical",
+    phQuestionTags: "e.g. common, hr, technical",
+    phStoryTitle: "e.g. Led a team through a critical project",
+    phStoryTags: "e.g. leadership, teamwork, conflict",
+    phStorySituation: "Describe the context and background",
+    phStoryTask: "What was your specific task or goal",
+    phStoryAction: "What specific steps did you take",
+    phStoryResult: "What was the outcome, include numbers if possible",
+    phStoryNotes: "e.g. Used at a Google interview, landed well",
+    phCompanyIndustry: "e.g. Tech, Finance, Consulting",
+    phCompanyTags: "e.g. large corp, startup",
+    phCompanyOverview: "Products, market focus, team size",
+    phCompanyCulture: "Team culture, work style, values",
+    phCompanyWhy: "What draws you in — use this at interviews",
+    phCompanyFocus: "Key areas to prepare for this company",
+    back: "← Back",
+    cardView: "Cards",
+    tableView: "Table",
+    filterPlaceholder: "Filter...",
+    hintQuestion: "Write out the interview question — behavioral, technical, or motivational",
+    hintCategory: "Used for grouping and filtering, e.g. behavioral, technical, motivation",
+    hintAnswers: "Prepare multiple answer versions for the same question",
+    hintTags: "Comma-separated, e.g. common, hr, leadership",
+    hintStoryTitle: "A short title for this story, e.g. Led team through critical migration",
+    hintSituation: "Set the scene — project, team size, your role, what was at stake",
+    hintTask: "Your specific goal or responsibility",
+    hintAction: "Step-by-step actions you took — be specific, show your initiative",
+    hintResult: "The outcome — ideally with numbers, e.g. improved efficiency 30%",
+    hintStoryNotes: "Where you've used this story and how it landed",
+    hintCompanyName: "Match the name in your Applications — the system will auto-link your roles",
+    hintIndustry: "e.g. Tech, Finance, Healthcare",
+    hintOverview: "Core products, market focus, company size and stage",
+    hintCulture: "Team dynamics, work style, values — check Glassdoor or career page",
+    hintWhyInterested: "You'll almost always be asked this — align with company values",
+    hintInterviewFocus: "Based on the JD and peer experience — what does this company test for",
+    prepLabel: "Interview Prep",
+    prepBtn: "Prep",
+    prepQuestionsSection: "Question Checklist",
+    prepStoriesSection: "Story Checklist",
+    prepProgress: "{q}/{qTotal} questions ready · {s}/{sTotal} stories ready",
+    prepNoQuestions: "No questions yet — add some in the Question Bank first.",
+    prepNoStories: "No stories yet — add some in the Story Library first.",
   },
 };
 
@@ -520,7 +692,15 @@ let jobs = [];
 let allJobs = [];
 let resumeProfiles = [];
 let userProfile = {};
+let questionBankItems = [];
+let interviewStoryItems = [];
+let companyNoteItems = [];
+let questionAnswerCounter = 0;
 let timelineJob = null;
+let prepJob = null;
+let activeEditor = null; // null | { type: "question"|"story"|"company", id: number|null, data: object|null }
+let moduleViewMode = {}; // { QUESTION_BANK: "card"|"table", ... }
+let moduleSearchText = {}; // { QUESTION_BANK: "", ... }
 let activeStatus = "ALL";
 let activeView = "DASHBOARD";
 let currentLang = localStorage.getItem("jobTrackerLanguage") || "zh";
@@ -531,6 +711,7 @@ const jobsTable = document.querySelector("#jobsTable");
 const emptyState = document.querySelector("#emptyState");
 const mainTitle = document.querySelector("#mainTitle");
 const summary = document.querySelector("#summary");
+const toolbar = document.querySelector(".toolbar");
 const searchInput = document.querySelector("#searchInput");
 const refreshBtn = document.querySelector("#refreshBtn");
 const newJobBtn = document.querySelector("#newJobBtn");
@@ -578,6 +759,7 @@ const timelineDialogTitle = document.querySelector("#timelineDialogTitle");
 const timelineDialogMeta = document.querySelector("#timelineDialogMeta");
 const timelineForm = document.querySelector("#timelineForm");
 const timelineList = document.querySelector("#timelineList");
+const prepDialog = document.querySelector("#prepDialog");
 const profileDialog = document.querySelector("#profileDialog");
 const profileForm = document.querySelector("#profileForm");
 const profileEditDialog = document.querySelector("#profileEditDialog");
@@ -810,6 +992,7 @@ function updateStaticText() {
   setText(".personal-info-panel .eyebrow", t("profilePanelEyebrow"));
   setText(".personal-info-panel h3", t("profilePanelTitle"));
   setText(".personal-info-panel .muted", t("profilePanelBody"));
+
 }
 
 async function api(path, options = {}) {
@@ -945,6 +1128,7 @@ function renderJobs() {
       </td>
       <td>
         <div class="operation-stack">
+          <button class="prep-btn" data-action="prep" data-id="${job.id}">${t("prepBtn")}</button>
           <button data-action="edit" data-id="${job.id}">${t("edit")}</button>
           <button class="danger-button" data-action="delete" data-id="${job.id}">${t("delete")}</button>
         </div>
@@ -1047,6 +1231,13 @@ function renderJobs() {
       await loadJobs();
     });
   });
+
+  jobsTable.querySelectorAll("[data-action='prep']").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const job = jobs.find((item) => String(item.id) === button.dataset.id);
+      if (job) await openPrepDialog(job);
+    });
+  });
 }
 
 function renderViewShell() {
@@ -1059,8 +1250,13 @@ function renderViewShell() {
   summaryView.hidden = !isSummary;
   profilesView.hidden = !isProfiles;
   moduleView.hidden = !isModule;
-  newJobBtn.hidden = isSummary || isModule;
-  newJobBtn.textContent = isProfiles ? t("newProfile") : t("newJob");
+  const moduleHasAdd = ["QUESTION_BANK", "INTERVIEW_STORIES", "COMPANY_NOTES"].includes(activeView);
+  newJobBtn.hidden = isSummary || (isModule && !moduleHasAdd) || activeEditor !== null;
+  if (isProfiles) newJobBtn.textContent = t("newProfile");
+  else if (activeView === "QUESTION_BANK") newJobBtn.textContent = t("addQuestion");
+  else if (activeView === "INTERVIEW_STORIES") newJobBtn.textContent = t("addStory");
+  else if (activeView === "COMPANY_NOTES") newJobBtn.textContent = t("addCompanyNote");
+  else newJobBtn.textContent = t("newJob");
   mainTitle.textContent = isDashboard
     ? t("dashboard")
     : isSummary
@@ -1070,6 +1266,11 @@ function renderViewShell() {
       : isModule
         ? t(MODULE_TITLE_KEYS[activeView])
         : t("applications");
+  toolbar.hidden = activeEditor !== null;
+  if (isModule && !activeEditor) {
+    const mod = moduleText(activeView);
+    if (mod) summary.textContent = mod.summary;
+  }
   dashboardNavButton.classList.toggle("active", isDashboard);
   summaryNavButton.classList.toggle("active", isSummary);
   profilesNavButton.classList.toggle("active", isProfiles);
@@ -1296,6 +1497,650 @@ function renderDashboardView() {
   });
 }
 
+async function renderWeeklyReviewView() {
+  const data = await api("/api/weekly-review");
+  summary.textContent = t("weeklyReviewPeriod");
+  moduleView.innerHTML = `
+    <div class="weekly-review">
+      <section class="weekly-section">
+        <div class="weekly-section-header">
+          <h3>${t("newThisWeek")}</h3>
+          <span class="tag-count">${data.new_jobs.length}</span>
+        </div>
+        ${data.new_jobs.length ? `<div class="module-list">${data.new_jobs.map((job) => `
+          <div class="module-item-row">
+            <div>
+              <strong>${escapeHtml(job.position_name)}</strong>
+              <span class="muted"> · ${escapeHtml(job.company_name)}</span>
+            </div>
+            <span class="muted">${stageLabel(job.current_stage)} · ${formatDate(job.created_at)}</span>
+          </div>
+        `).join("")}</div>` : `<p class="muted">${t("noNewApps")}</p>`}
+      </section>
+      <section class="weekly-section">
+        <div class="weekly-section-header">
+          <h3>${t("recentTimeline")}</h3>
+          <span class="tag-count">${data.recent_timeline.length}</span>
+        </div>
+        ${data.recent_timeline.length ? `<div class="module-list">${data.recent_timeline.map((event) => `
+          <div class="module-item-row">
+            <div>
+              <strong>${escapeHtml(event.event_title)}</strong>
+              <span class="muted"> · ${escapeHtml(event.company_name)} - ${escapeHtml(event.position_name)}</span>
+            </div>
+            <span class="muted">${formatDate(event.event_time)}</span>
+          </div>
+        `).join("")}</div>` : `<p class="muted">${t("noRecentTimeline")}</p>`}
+      </section>
+      <section class="weekly-section">
+        <div class="weekly-section-header">
+          <h3>${t("staleApps")}</h3>
+          <span class="tag-count">${data.stale_jobs.length}</span>
+        </div>
+        ${data.stale_jobs.length ? `<div class="module-list">${data.stale_jobs.map((job) => `
+          <div class="module-item-row">
+            <div>
+              <strong>${escapeHtml(job.position_name)}</strong>
+              <span class="muted"> · ${escapeHtml(job.company_name)}</span>
+            </div>
+            <span class="muted">${t("lastUpdated")}: ${formatDate(job.updated_at)}</span>
+          </div>
+        `).join("")}</div>` : `<p class="muted">${t("noStaleApps")}</p>`}
+      </section>
+    </div>
+  `;
+}
+
+function addAnswerRow(container, label = "", content = "") {
+  const idx = questionAnswerCounter++;
+  const div = document.createElement("div");
+  div.className = "answer-row";
+  div.innerHTML = `
+    <div class="answer-row-fields">
+      <input class="answer-label-input" placeholder="${t("answerLabelField")}">
+      <textarea class="answer-content-input" rows="3" placeholder="${t("answerContentField")}"></textarea>
+    </div>
+    <button type="button" class="icon-btn" aria-label="Remove">×</button>
+  `;
+  div.querySelector(".answer-label-input").value = label;
+  const ta = div.querySelector(".answer-content-input");
+  ta.value = content;
+  ta.addEventListener("input", () => { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; });
+  if (content) { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
+  div.querySelector(".icon-btn").addEventListener("click", () => div.remove());
+  container.appendChild(div);
+}
+
+function renderModuleToolbar(viewKey) {
+  const mode = moduleViewMode[viewKey] || "card";
+  const search = escapeHtml(moduleSearchText[viewKey] || "");
+  return `
+    <div class="module-toolbar-bar">
+      <input type="text" class="module-filter-input" id="moduleFilterInput" placeholder="${t("filterPlaceholder")}" value="${search}" />
+      <div class="view-mode-toggle">
+        <button class="vmtoggle-btn${mode === "card" ? " active" : ""}" data-mode="card">${t("cardView")}</button>
+        <button class="vmtoggle-btn${mode === "table" ? " active" : ""}" data-mode="table">${t("tableView")}</button>
+      </div>
+    </div>`;
+}
+
+function attachModuleToolbarHandlers(viewKey, rerender) {
+  document.querySelector("#moduleFilterInput")?.addEventListener("input", (e) => {
+    moduleSearchText[viewKey] = e.target.value;
+    rerender();
+  });
+  document.querySelectorAll(".vmtoggle-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      moduleViewMode[viewKey] = btn.dataset.mode;
+      rerender();
+    });
+  });
+}
+
+async function renderQuestionBankView() {
+  questionBankItems = await api("/api/question-bank");
+  renderQuestionBankContent();
+}
+
+function renderQuestionBankContent() {
+  const search = (moduleSearchText.QUESTION_BANK || "").toLowerCase();
+  const items = questionBankItems.filter((q) => !search ||
+    q.question.toLowerCase().includes(search) ||
+    (q.category || "").toLowerCase().includes(search) ||
+    (q.tags || []).some((tg) => tg.toLowerCase().includes(search)));
+  summary.textContent = t("questionCount", { count: items.length });
+  const mode = moduleViewMode.QUESTION_BANK || "card";
+  let content;
+  if (items.length === 0) {
+    content = `<p class="muted module-empty">${t("noQuestions")}</p>`;
+  } else if (mode === "table") {
+    content = `<table class="module-table">
+      <thead><tr><th>${t("questionTextLabel")}</th><th>${t("questionCategoryLabel")}</th><th>${t("tags")}</th><th>${t("answersLabel")}</th><th>${t("tableActions")}</th></tr></thead>
+      <tbody>${items.map((q) => `
+        <tr>
+          <td class="cell-truncate">${escapeHtml(q.question)}</td>
+          <td>${escapeHtml(q.category || "")}</td>
+          <td>${(q.tags || []).map((tg) => `<span class="tag-chip">${escapeHtml(tg)}</span>`).join(" ")}</td>
+          <td>${(q.answers || []).length}</td>
+          <td><div class="operation-stack"><button data-action="edit-question" data-id="${q.id}">${t("edit")}</button><button class="danger-button" data-action="delete-question" data-id="${q.id}">${t("delete")}</button></div></td>
+        </tr>`).join("")}
+      </tbody></table>`;
+  } else {
+    content = items.map((q) => `
+      <article class="module-item-card" data-id="${q.id}">
+        <div class="module-item-header">
+          <div class="module-item-body">
+            <h3>${escapeHtml(q.question)}</h3>
+            <div class="tag-row">
+              ${q.category && q.category !== "general" ? `<span>${escapeHtml(q.category)}</span>` : ""}
+              ${(q.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+            </div>
+          </div>
+          <div class="operation-stack item-actions">
+            <button data-action="edit-question" data-id="${q.id}">${t("edit")}</button>
+            <button class="danger-button" data-action="delete-question" data-id="${q.id}">${t("delete")}</button>
+          </div>
+        </div>
+        ${(q.answers || []).length ? `
+          <div class="answer-list">
+            ${q.answers.map((ans) => `
+              <div class="answer-item">
+                ${(typeof ans === "object" && ans.label) ? `<p class="answer-label-tag">${escapeHtml(ans.label)}</p>` : ""}
+                <p>${escapeHtml(typeof ans === "string" ? ans : (ans.content || ""))}</p>
+              </div>`).join("")}
+          </div>` : `<p class="muted">${t("noAnswers")}</p>`}
+      </article>`).join("");
+  }
+  moduleView.innerHTML = renderModuleToolbar("QUESTION_BANK") + content;
+  attachModuleToolbarHandlers("QUESTION_BANK", renderQuestionBankContent);
+  moduleView.querySelectorAll("[data-action='edit-question']").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const q = questionBankItems.find((item) => String(item.id) === btn.dataset.id);
+      if (q) openNoteEditor("question", q);
+    });
+  });
+  moduleView.querySelectorAll("[data-action='delete-question']").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const q = questionBankItems.find((item) => String(item.id) === btn.dataset.id);
+      if (!q || !window.confirm(t("deleteQuestionConfirm"))) return;
+      await api(`/api/question-bank/${q.id}`, { method: "DELETE" });
+      questionBankItems = questionBankItems.filter((x) => x.id !== q.id);
+      renderQuestionBankContent();
+    });
+  });
+}
+
+async function renderInterviewStoriesView() {
+  interviewStoryItems = await api("/api/interview-stories");
+  renderInterviewStoriesContent();
+}
+
+function renderInterviewStoriesContent() {
+  const search = (moduleSearchText.INTERVIEW_STORIES || "").toLowerCase();
+  const items = interviewStoryItems.filter((s) => !search ||
+    s.title.toLowerCase().includes(search) ||
+    (s.situation || "").toLowerCase().includes(search) ||
+    (s.tags || []).some((tg) => tg.toLowerCase().includes(search)));
+  summary.textContent = t("storyCount", { count: items.length });
+  const mode = moduleViewMode.INTERVIEW_STORIES || "card";
+  let content;
+  if (items.length === 0) {
+    content = `<p class="muted module-empty">${t("noStories")}</p>`;
+  } else if (mode === "table") {
+    content = `<table class="module-table">
+      <thead><tr><th>${t("storyTitleField")}</th><th>${t("tags")}</th><th>Situation</th><th>${t("tableActions")}</th></tr></thead>
+      <tbody>${items.map((s) => `
+        <tr>
+          <td>${escapeHtml(s.title)}</td>
+          <td>${(s.tags || []).map((tg) => `<span class="tag-chip">${escapeHtml(tg)}</span>`).join(" ")}</td>
+          <td class="cell-truncate">${escapeHtml((s.situation || "").slice(0, 80))}${(s.situation || "").length > 80 ? "…" : ""}</td>
+          <td><div class="operation-stack"><button data-action="edit-story" data-id="${s.id}">${t("edit")}</button><button class="danger-button" data-action="delete-story" data-id="${s.id}">${t("delete")}</button></div></td>
+        </tr>`).join("")}
+      </tbody></table>`;
+  } else {
+    content = items.map((story) => `
+      <article class="module-item-card" data-id="${story.id}">
+        <div class="module-item-header">
+          <div class="module-item-body">
+            <h3>${escapeHtml(story.title)}</h3>
+            <div class="tag-row">
+              ${(story.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+            </div>
+          </div>
+          <div class="operation-stack item-actions">
+            <button data-action="edit-story" data-id="${story.id}">${t("edit")}</button>
+            <button class="danger-button" data-action="delete-story" data-id="${story.id}">${t("delete")}</button>
+          </div>
+        </div>
+        <div class="star-grid">
+          ${story.situation ? `<div class="star-field"><dt>${t("storySituationLabel")}</dt><dd>${escapeHtml(story.situation)}</dd></div>` : ""}
+          ${story.task ? `<div class="star-field"><dt>${t("storyTaskLabel")}</dt><dd>${escapeHtml(story.task)}</dd></div>` : ""}
+          ${story.action ? `<div class="star-field"><dt>${t("storyActionLabel")}</dt><dd>${escapeHtml(story.action)}</dd></div>` : ""}
+          ${story.result ? `<div class="star-field"><dt>${t("storyResultLabel")}</dt><dd>${escapeHtml(story.result)}</dd></div>` : ""}
+        </div>
+        ${story.notes ? `<p class="story-notes muted">${escapeHtml(story.notes)}</p>` : ""}
+      </article>`).join("");
+  }
+  moduleView.innerHTML = renderModuleToolbar("INTERVIEW_STORIES") + content;
+  attachModuleToolbarHandlers("INTERVIEW_STORIES", renderInterviewStoriesContent);
+  moduleView.querySelectorAll("[data-action='edit-story']").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const story = interviewStoryItems.find((item) => String(item.id) === btn.dataset.id);
+      if (story) openNoteEditor("story", story);
+    });
+  });
+  moduleView.querySelectorAll("[data-action='delete-story']").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const story = interviewStoryItems.find((item) => String(item.id) === btn.dataset.id);
+      if (!story || !window.confirm(t("deleteStoryConfirm"))) return;
+      await api(`/api/interview-stories/${story.id}`, { method: "DELETE" });
+      interviewStoryItems = interviewStoryItems.filter((x) => x.id !== story.id);
+      renderInterviewStoriesContent();
+    });
+  });
+}
+
+async function renderCompanyNotesView() {
+  companyNoteItems = await api("/api/company-notes");
+  renderCompanyNotesContent();
+}
+
+function renderCompanyNotesContent() {
+  const search = (moduleSearchText.COMPANY_NOTES || "").toLowerCase();
+  const items = companyNoteItems.filter((n) => !search ||
+    n.company_name.toLowerCase().includes(search) ||
+    (n.industry || "").toLowerCase().includes(search) ||
+    (n.tags || []).some((tg) => tg.toLowerCase().includes(search)));
+  summary.textContent = t("companyNoteCount", { count: items.length });
+  const mode = moduleViewMode.COMPANY_NOTES || "card";
+  let content;
+  if (items.length === 0) {
+    content = `<p class="muted module-empty">${t("noCompanyNotes")}</p>`;
+  } else if (mode === "table") {
+    content = `<table class="module-table">
+      <thead><tr><th>${t("company")}</th><th>${t("industryLabel")}</th><th>${t("tags")}</th><th>${t("linkedJobs")}</th><th>${t("tableActions")}</th></tr></thead>
+      <tbody>${items.map((note) => {
+        const linked = allJobs.filter((j) => j.company_name.toLowerCase() === note.company_name.toLowerCase());
+        return `<tr>
+          <td>${escapeHtml(note.company_name)}</td>
+          <td>${escapeHtml(note.industry || "")}</td>
+          <td>${(note.tags || []).map((tg) => `<span class="tag-chip">${escapeHtml(tg)}</span>`).join(" ")}</td>
+          <td>${linked.length}</td>
+          <td><div class="operation-stack"><button data-action="edit-company" data-id="${note.id}">${t("edit")}</button><button class="danger-button" data-action="delete-company" data-id="${note.id}">${t("delete")}</button></div></td>
+        </tr>`;
+      }).join("")}
+      </tbody></table>`;
+  } else {
+    content = items.map((note) => {
+      const linked = allJobs.filter((job) => job.company_name.toLowerCase() === note.company_name.toLowerCase());
+      return `
+        <article class="module-item-card" data-id="${note.id}">
+          <div class="module-item-header">
+            <div class="module-item-body">
+              <h3>${escapeHtml(note.company_name)}</h3>
+              <div class="tag-row">
+                ${note.industry ? `<span>${escapeHtml(note.industry)}</span>` : ""}
+                ${(note.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+              </div>
+            </div>
+            <div class="operation-stack item-actions">
+              <button data-action="edit-company" data-id="${note.id}">${t("edit")}</button>
+              <button class="danger-button" data-action="delete-company" data-id="${note.id}">${t("delete")}</button>
+            </div>
+          </div>
+          ${note.overview ? `<p>${escapeHtml(note.overview)}</p>` : ""}
+          ${note.why_interested ? `<div class="note-field"><dt>${t("whyInterestedLabel")}</dt><dd>${escapeHtml(note.why_interested)}</dd></div>` : ""}
+          ${note.interview_focus ? `<div class="note-field"><dt>${t("interviewFocusLabel")}</dt><dd>${escapeHtml(note.interview_focus)}</dd></div>` : ""}
+          <div class="linked-jobs-row">
+            <span class="muted">${t("linkedJobs")}:</span>
+            ${linked.length ? linked.map((job) => `<span class="linked-job-tag">${escapeHtml(job.position_name)}</span>`).join("") : `<span class="muted">${t("noLinkedJobs")}</span>`}
+          </div>
+        </article>`;
+    }).join("");
+  }
+  moduleView.innerHTML = renderModuleToolbar("COMPANY_NOTES") + content;
+  attachModuleToolbarHandlers("COMPANY_NOTES", renderCompanyNotesContent);
+  moduleView.querySelectorAll("[data-action='edit-company']").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const note = companyNoteItems.find((item) => String(item.id) === btn.dataset.id);
+      if (note) openNoteEditor("company", note);
+    });
+  });
+  moduleView.querySelectorAll("[data-action='delete-company']").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const note = companyNoteItems.find((item) => String(item.id) === btn.dataset.id);
+      if (!note || !window.confirm(t("deleteCompanyNoteConfirm"))) return;
+      await api(`/api/company-notes/${note.id}`, { method: "DELETE" });
+      companyNoteItems = companyNoteItems.filter((x) => x.id !== note.id);
+      renderCompanyNotesContent();
+    });
+  });
+}
+
+async function openPrepDialog(job) {
+  prepJob = job;
+  await renderPrepDialog();
+  prepDialog.showModal();
+}
+
+async function renderPrepDialog() {
+  if (!prepJob) return;
+  const data = await api(`/api/jobs/${prepJob.id}/prep`);
+
+  document.querySelector("#prepDialogTitle").textContent = prepJob.position_name;
+  document.querySelector("#prepDialogMeta").textContent =
+    `${prepJob.company_name} · ${stageLabel(prepJob.current_stage)} · ${statusLabel(prepJob.status)}`;
+  document.querySelector("#prepDialogEyebrow").textContent = t("prepLabel");
+
+  const totalItems = data.questions.length + data.stories.length;
+  const readyQ = data.questions.filter((q) => q.is_ready).length;
+  const readyS = data.stories.filter((s) => s.is_ready).length;
+  const totalReady = readyQ + readyS;
+  const pct = totalItems > 0 ? Math.round((totalReady / totalItems) * 100) : 0;
+
+  document.querySelector("#prepProgress").innerHTML = `
+    <div class="prep-progress">
+      <span class="prep-progress-text">${t("prepProgress", { q: readyQ, qTotal: data.questions.length, s: readyS, sTotal: data.stories.length })}</span>
+      <div class="prep-bar"><div class="prep-bar-fill" style="width:${pct}%"></div></div>
+    </div>`;
+
+  const byCategory = {};
+  data.questions.forEach((q) => {
+    const cat = q.category || "general";
+    if (!byCategory[cat]) byCategory[cat] = [];
+    byCategory[cat].push(q);
+  });
+
+  const qHtml = data.questions.length === 0
+    ? `<p class="prep-empty">${t("prepNoQuestions")}</p>`
+    : Object.entries(byCategory).map(([cat, qs]) => `
+        <div class="prep-category">
+          <div class="prep-category-label">${escapeHtml(cat)}</div>
+          ${qs.map((q) => `
+            <label class="prep-item${q.is_ready ? " is-ready" : ""}">
+              <input type="checkbox" class="prep-check" data-type="question" data-id="${q.id}" ${q.is_ready ? "checked" : ""} />
+              <span class="prep-item-text">${escapeHtml(q.question)}</span>
+              ${q.tags.length ? `<span class="prep-item-tags">${q.tags.map((tg) => `<span class="tag-chip">${escapeHtml(tg)}</span>`).join("")}</span>` : ""}
+            </label>`).join("")}
+        </div>`).join("");
+
+  const sHtml = data.stories.length === 0
+    ? `<p class="prep-empty">${t("prepNoStories")}</p>`
+    : data.stories.map((s) => `
+        <label class="prep-item${s.is_ready ? " is-ready" : ""}">
+          <input type="checkbox" class="prep-check" data-type="story" data-id="${s.id}" ${s.is_ready ? "checked" : ""} />
+          <span class="prep-item-text">${escapeHtml(s.title)}</span>
+          ${s.tags.length ? `<span class="prep-item-tags">${s.tags.map((tg) => `<span class="tag-chip">${escapeHtml(tg)}</span>`).join("")}</span>` : ""}
+          ${s.situation ? `<span class="prep-item-hint">${escapeHtml(s.situation.slice(0, 60))}${s.situation.length > 60 ? "…" : ""}</span>` : ""}
+        </label>`).join("");
+
+  document.querySelector("#prepContent").innerHTML = `
+    <div class="prep-sections">
+      <div class="prep-section">
+        <h4 class="prep-section-title">${t("prepQuestionsSection")}</h4>
+        ${qHtml}
+      </div>
+      <div class="prep-section">
+        <h4 class="prep-section-title">${t("prepStoriesSection")}</h4>
+        ${sHtml}
+      </div>
+    </div>`;
+
+  document.querySelectorAll(".prep-check").forEach((cb) => {
+    cb.addEventListener("change", async () => {
+      const isReady = cb.checked ? 1 : 0;
+      await api(`/api/jobs/${prepJob.id}/prep`, {
+        method: "POST",
+        body: JSON.stringify({ item_type: cb.dataset.type, item_id: parseInt(cb.dataset.id), is_ready: isReady }),
+      });
+      cb.closest(".prep-item")?.classList.toggle("is-ready", cb.checked);
+      const allQ = document.querySelectorAll('.prep-check[data-type="question"]');
+      const allS = document.querySelectorAll('.prep-check[data-type="story"]');
+      const rQ = [...allQ].filter((c) => c.checked).length;
+      const rS = [...allS].filter((c) => c.checked).length;
+      const tot = allQ.length + allS.length;
+      const rdy = rQ + rS;
+      document.querySelector(".prep-progress-text").textContent =
+        t("prepProgress", { q: rQ, qTotal: allQ.length, s: rS, sTotal: allS.length });
+      document.querySelector(".prep-bar-fill").style.width = tot > 0 ? `${Math.round((rdy / tot) * 100)}%` : "0%";
+    });
+  });
+}
+
+function openNoteEditor(type, item = null) {
+  activeEditor = { type, id: item?.id ?? null, data: item };
+  loadJobs();
+}
+
+function getNoteEditorFields(type, data) {
+  const h = (s) => escapeHtml(String(s ?? ""));
+  const tagStr = (v) => Array.isArray(v) ? v.join(", ") : (v || "");
+  if (type === "question") {
+    return `
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("questionTextLabel")}</span>
+          <span class="note-hint" data-hint="${h(t("hintQuestion"))}">?</span>
+        </div>
+        <textarea name="question" class="note-field-input" rows="4" required>${h(data?.question)}</textarea>
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("questionCategoryLabel")}</span>
+          <span class="note-hint" data-hint="${h(t("hintCategory"))}">?</span>
+        </div>
+        <input name="category" class="note-field-input" value="${h(data?.category)}" placeholder="${h(t("phQuestionCategory"))}" />
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("tags")}</span>
+          <span class="note-hint" data-hint="${h(t("hintTags"))}">?</span>
+        </div>
+        <input name="tags" class="note-field-input" value="${h(tagStr(data?.tags))}" placeholder="${h(t("phQuestionTags"))}" />
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("answersLabel")}</span>
+          <span class="note-hint" data-hint="${h(t("hintAnswers"))}">?</span>
+        </div>
+        <div id="noteAnswersList" class="note-answers-list"></div>
+        <button type="button" class="note-add-btn" id="noteAddAnswerBtn">${t("addAnswerBtn")}</button>
+      </div>`;
+  }
+  if (type === "story") {
+    return `
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("storyTitleField")}</span>
+          <span class="note-hint" data-hint="${h(t("hintStoryTitle"))}">?</span>
+        </div>
+        <input name="title" class="note-field-input" value="${h(data?.title)}" required placeholder="${h(t("phStoryTitle"))}" />
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("tags")}</span>
+          <span class="note-hint" data-hint="${h(t("hintTags"))}">?</span>
+        </div>
+        <input name="tags" class="note-field-input" value="${h(tagStr(data?.tags))}" placeholder="${h(t("phStoryTags"))}" />
+      </div>
+      <div class="note-field-section-label">STAR</div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>S — ${t("storySituationLabel")}</span>
+          <span class="note-hint" data-hint="${h(t("hintSituation"))}">?</span>
+        </div>
+        <textarea name="situation" class="note-field-input" rows="4" placeholder="${h(t("phStorySituation"))}">${h(data?.situation)}</textarea>
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>T — ${t("storyTaskLabel")}</span>
+          <span class="note-hint" data-hint="${h(t("hintTask"))}">?</span>
+        </div>
+        <textarea name="task" class="note-field-input" rows="4" placeholder="${h(t("phStoryTask"))}">${h(data?.task)}</textarea>
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>A — ${t("storyActionLabel")}</span>
+          <span class="note-hint" data-hint="${h(t("hintAction"))}">?</span>
+        </div>
+        <textarea name="action" class="note-field-input" rows="5" placeholder="${h(t("phStoryAction"))}">${h(data?.action)}</textarea>
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>R — ${t("storyResultLabel")}</span>
+          <span class="note-hint" data-hint="${h(t("hintResult"))}">?</span>
+        </div>
+        <textarea name="result" class="note-field-input" rows="4" placeholder="${h(t("phStoryResult"))}">${h(data?.result)}</textarea>
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("storyNotesLabel")}</span>
+          <span class="note-hint" data-hint="${h(t("hintStoryNotes"))}">?</span>
+        </div>
+        <textarea name="notes" class="note-field-input" rows="3" placeholder="${h(t("phStoryNotes"))}">${h(data?.notes)}</textarea>
+      </div>`;
+  }
+  if (type === "company") {
+    return `
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("company")}</span>
+          <span class="note-hint" data-hint="${h(t("hintCompanyName"))}">?</span>
+        </div>
+        <input name="company_name" class="note-field-input" value="${h(data?.company_name)}" required />
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("industryLabel")}</span>
+          <span class="note-hint" data-hint="${h(t("hintIndustry"))}">?</span>
+        </div>
+        <input name="industry" class="note-field-input" value="${h(data?.industry)}" placeholder="${h(t("phCompanyIndustry"))}" />
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("tags")}</span>
+          <span class="note-hint" data-hint="${h(t("hintTags"))}">?</span>
+        </div>
+        <input name="tags" class="note-field-input" value="${h(tagStr(data?.tags))}" placeholder="${h(t("phCompanyTags"))}" />
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("overviewLabel")}</span>
+          <span class="note-hint" data-hint="${h(t("hintOverview"))}">?</span>
+        </div>
+        <textarea name="overview" class="note-field-input" rows="4" placeholder="${h(t("phCompanyOverview"))}">${h(data?.overview)}</textarea>
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("cultureLabel")}</span>
+          <span class="note-hint" data-hint="${h(t("hintCulture"))}">?</span>
+        </div>
+        <textarea name="culture" class="note-field-input" rows="4" placeholder="${h(t("phCompanyCulture"))}">${h(data?.culture)}</textarea>
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("whyInterestedLabel")}</span>
+          <span class="note-hint" data-hint="${h(t("hintWhyInterested"))}">?</span>
+        </div>
+        <textarea name="why_interested" class="note-field-input" rows="4" placeholder="${h(t("phCompanyWhy"))}">${h(data?.why_interested)}</textarea>
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("interviewFocusLabel")}</span>
+          <span class="note-hint" data-hint="${h(t("hintInterviewFocus"))}">?</span>
+        </div>
+        <textarea name="interview_focus" class="note-field-input" rows="4" placeholder="${h(t("phCompanyFocus"))}">${h(data?.interview_focus)}</textarea>
+      </div>
+      <div class="note-field">
+        <div class="note-field-label">
+          <span>${t("otherNotesLabel")}</span>
+        </div>
+        <textarea name="notes" class="note-field-input" rows="4">${h(data?.notes)}</textarea>
+      </div>`;
+  }
+  return "";
+}
+
+function renderNoteEditor() {
+  const { type, id, data } = activeEditor;
+  moduleView.innerHTML = `
+    <div class="note-editor">
+      <div class="note-editor-nav">
+        <button type="button" class="note-back-btn" id="noteBackBtn">${t("back")}</button>
+      </div>
+      <form id="noteEditorForm" class="note-editor-form">
+        ${getNoteEditorFields(type, data)}
+        <div class="note-editor-footer">
+          <button type="button" class="note-back-btn" id="noteBackBtn2">${t("cancel")}</button>
+          <button type="submit" class="primary">${t("save")}</button>
+        </div>
+      </form>
+    </div>`;
+
+  if (type === "question") {
+    const container = document.querySelector("#noteAnswersList");
+    const answers = data?.answers || [];
+    if (answers.length) {
+      answers.forEach((ans) => addAnswerRow(container, typeof ans === "object" ? (ans.label || "") : "", typeof ans === "object" ? (ans.content || "") : String(ans)));
+    } else {
+      addAnswerRow(container);
+    }
+    document.querySelector("#noteAddAnswerBtn").addEventListener("click", () => addAnswerRow(container));
+  }
+
+  const backHandler = () => {
+    activeEditor = null;
+    renderViewShell();
+    if (activeView === "QUESTION_BANK") renderQuestionBankContent();
+    else if (activeView === "INTERVIEW_STORIES") renderInterviewStoriesContent();
+    else if (activeView === "COMPANY_NOTES") renderCompanyNotesContent();
+  };
+  document.querySelector("#noteBackBtn")?.addEventListener("click", backHandler);
+  document.querySelector("#noteBackBtn2")?.addEventListener("click", backHandler);
+
+  function autoResize(el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; }
+  moduleView.querySelectorAll("textarea.note-field-input").forEach((ta) => {
+    autoResize(ta);
+    ta.addEventListener("input", () => autoResize(ta));
+  });
+
+  document.querySelector("#noteEditorForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await saveNoteEditor(event.target);
+  });
+}
+
+async function saveNoteEditor(form) {
+  const { type, id } = activeEditor;
+  const fd = new FormData(form);
+  let payload, url, method;
+
+  if (type === "question") {
+    const container = document.querySelector("#noteAnswersList");
+    const answers = [];
+    container?.querySelectorAll(".answer-row").forEach((row) => {
+      const label = (row.querySelector(".answer-label-input")?.value || "").trim();
+      const content = (row.querySelector(".answer-content-input")?.value || "").trim();
+      if (content) answers.push({ label, content });
+    });
+    payload = { question: fd.get("question"), category: fd.get("category") || "general", tags: fd.get("tags") || "", answers };
+    url = id ? `/api/question-bank/${id}` : "/api/question-bank";
+    method = id ? "PATCH" : "POST";
+  } else if (type === "story") {
+    payload = { title: fd.get("title"), tags: fd.get("tags") || "", situation: fd.get("situation") || "", task: fd.get("task") || "", action: fd.get("action") || "", result: fd.get("result") || "", notes: fd.get("notes") || "" };
+    url = id ? `/api/interview-stories/${id}` : "/api/interview-stories";
+    method = id ? "PATCH" : "POST";
+  } else {
+    payload = { company_name: fd.get("company_name"), industry: fd.get("industry") || "", tags: fd.get("tags") || "", overview: fd.get("overview") || "", culture: fd.get("culture") || "", why_interested: fd.get("why_interested") || "", interview_focus: fd.get("interview_focus") || "", notes: fd.get("notes") || "" };
+    url = id ? `/api/company-notes/${id}` : "/api/company-notes";
+    method = id ? "PATCH" : "POST";
+  }
+
+  await api(url, { method, body: JSON.stringify(payload) });
+  activeEditor = null;
+  await loadJobs();
+}
+
 function renderModuleView() {
   const module = moduleText(activeView);
   if (!module) return;
@@ -1396,7 +2241,22 @@ async function loadJobs() {
   } else if (activeView === "PROFILES") {
     await loadProfiles();
   } else if (MODULE_VIEWS[activeView]) {
-    renderModuleView();
+    if (activeEditor !== null) {
+      renderNoteEditor();
+    } else if (activeView === "WEEKLY_REVIEW") {
+      await renderWeeklyReviewView();
+    } else if (activeView === "QUESTION_BANK") {
+      renderQuestionBankContent();
+      await renderQuestionBankView();
+    } else if (activeView === "INTERVIEW_STORIES") {
+      renderInterviewStoriesContent();
+      await renderInterviewStoriesView();
+    } else if (activeView === "COMPANY_NOTES") {
+      renderCompanyNotesContent();
+      await renderCompanyNotesView();
+    } else {
+      renderModuleView();
+    }
   } else {
     renderJobs();
   }
@@ -1481,6 +2341,18 @@ newJobBtn.addEventListener("click", () => {
     profileDialog.showModal();
     return;
   }
+  if (activeView === "QUESTION_BANK") {
+    openNoteEditor("question");
+    return;
+  }
+  if (activeView === "INTERVIEW_STORIES") {
+    openNoteEditor("story");
+    return;
+  }
+  if (activeView === "COMPANY_NOTES") {
+    openNoteEditor("company");
+    return;
+  }
   jobDialog.showModal();
 });
 languageToggle.addEventListener("click", () => {
@@ -1492,21 +2364,31 @@ languageToggle.addEventListener("click", () => {
 refreshBtn.addEventListener("click", loadJobs);
 dashboardNavButton.addEventListener("click", () => {
   activeView = "DASHBOARD";
+  activeEditor = null;
   loadJobs();
 });
 summaryNavButton.addEventListener("click", () => {
   activeView = "SUMMARY";
+  activeEditor = null;
   loadJobs();
 });
 profilesNavButton.addEventListener("click", () => {
   activeView = "PROFILES";
+  activeEditor = null;
   loadJobs();
 });
 moduleNavButtons.forEach((button) => {
   button.addEventListener("click", () => {
     activeView = button.dataset.moduleView;
+    activeEditor = null;
     loadJobs();
   });
+});
+
+document.querySelector("#sidebarCollapseBtn").addEventListener("click", () => {
+  const shell = document.querySelector(".app-shell");
+  const collapsed = shell.classList.toggle("sidebar-collapsed");
+  document.querySelector("#sidebarCollapseBtn").textContent = collapsed ? "›" : "‹";
 });
 editPersonalInfoBtn.addEventListener("click", openPersonalInfoDialog);
 profilesExitBtn.addEventListener("click", () => {
@@ -1624,6 +2506,13 @@ editDialog.addEventListener("close", () => {
 timelineDialog.addEventListener("click", (event) => {
   if (event.target.matches("[data-close-timeline]")) {
     timelineDialog.close();
+  }
+});
+
+prepDialog.addEventListener("click", (event) => {
+  if (event.target.matches("[data-close-prep]")) {
+    prepJob = null;
+    prepDialog.close();
   }
 });
 
