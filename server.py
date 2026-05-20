@@ -159,6 +159,54 @@ def init_db() -> None:
                 updated_at TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS question_bank (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                question TEXT NOT NULL,
+                category TEXT NOT NULL DEFAULT 'general',
+                tags TEXT NOT NULL DEFAULT '[]',
+                answers_json TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS interview_stories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                situation TEXT NOT NULL DEFAULT '',
+                task TEXT NOT NULL DEFAULT '',
+                action TEXT NOT NULL DEFAULT '',
+                result TEXT NOT NULL DEFAULT '',
+                tags TEXT NOT NULL DEFAULT '[]',
+                notes TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS company_notes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_name TEXT NOT NULL,
+                industry TEXT NOT NULL DEFAULT '',
+                overview TEXT NOT NULL DEFAULT '',
+                culture TEXT NOT NULL DEFAULT '',
+                why_interested TEXT NOT NULL DEFAULT '',
+                interview_focus TEXT NOT NULL DEFAULT '',
+                notes TEXT NOT NULL DEFAULT '',
+                tags TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS interview_prep (
+                job_application_id INTEGER NOT NULL,
+                item_type TEXT NOT NULL,
+                item_id INTEGER NOT NULL,
+                is_ready INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (job_application_id, item_type, item_id),
+                FOREIGN KEY (job_application_id)
+                    REFERENCES job_applications(id)
+                    ON DELETE CASCADE
+            );
+
             CREATE INDEX IF NOT EXISTS idx_jobs_status
                 ON job_applications(status);
             CREATE INDEX IF NOT EXISTS idx_timeline_job
@@ -217,6 +265,26 @@ def resume_row_to_dict(row: sqlite3.Row) -> dict:
     data = row_to_dict(row)
     data["tags"] = safe_json_loads(data.get("tags"), [])
     data["parsed_json"] = safe_json_loads(data.get("parsed_json"), {})
+    return data
+
+
+def question_row_to_dict(row: sqlite3.Row) -> dict:
+    data = row_to_dict(row)
+    data["tags"] = safe_json_loads(data.get("tags"), [])
+    data["answers"] = safe_json_loads(data.get("answers_json"), [])
+    del data["answers_json"]
+    return data
+
+
+def story_row_to_dict(row: sqlite3.Row) -> dict:
+    data = row_to_dict(row)
+    data["tags"] = safe_json_loads(data.get("tags"), [])
+    return data
+
+
+def company_note_row_to_dict(row: sqlite3.Row) -> dict:
+    data = row_to_dict(row)
+    data["tags"] = safe_json_loads(data.get("tags"), [])
     return data
 
 
@@ -548,6 +616,22 @@ class Handler(BaseHTTPRequestHandler):
             if len(parts) == 4 and parts[2].isdigit() and parts[3] == "html":
                 self.serve_saved_html(int(parts[2]))
                 return
+            if len(parts) == 4 and parts[2].isdigit() and parts[3] == "prep":
+                self.get_job_prep(int(parts[2]))
+                return
+
+        if path == "/api/weekly-review":
+            self.get_weekly_review()
+            return
+        if path == "/api/question-bank":
+            self.list_question_bank()
+            return
+        if path == "/api/interview-stories":
+            self.list_interview_stories()
+            return
+        if path == "/api/company-notes":
+            self.list_company_notes()
+            return
 
         self.serve_static(path)
 
@@ -565,6 +649,18 @@ class Handler(BaseHTTPRequestHandler):
             if len(parts) == 4 and parts[2].isdigit() and parts[3] == "timeline":
                 self.create_timeline(int(parts[2]))
                 return
+            if len(parts) == 4 and parts[2].isdigit() and parts[3] == "prep":
+                self.toggle_prep_item(int(parts[2]))
+                return
+        if path == "/api/question-bank":
+            self.create_question()
+            return
+        if path == "/api/interview-stories":
+            self.create_story()
+            return
+        if path == "/api/company-notes":
+            self.create_company_note()
+            return
         self.send_error_json("Not found", HTTPStatus.NOT_FOUND)
 
     def do_PATCH(self) -> None:
@@ -584,6 +680,15 @@ class Handler(BaseHTTPRequestHandler):
             return
         if len(parts) == 2 and parts[0] == "api" and parts[1] == "user-profile":
             self.update_user_profile()
+            return
+        if len(parts) == 3 and parts[0] == "api" and parts[1] == "question-bank" and parts[2].isdigit():
+            self.update_question(int(parts[2]))
+            return
+        if len(parts) == 3 and parts[0] == "api" and parts[1] == "interview-stories" and parts[2].isdigit():
+            self.update_story(int(parts[2]))
+            return
+        if len(parts) == 3 and parts[0] == "api" and parts[1] == "company-notes" and parts[2].isdigit():
+            self.update_company_note(int(parts[2]))
             return
         self.send_error_json("Not found", HTTPStatus.NOT_FOUND)
 
@@ -610,6 +715,15 @@ class Handler(BaseHTTPRequestHandler):
             and parts[2].isdigit()
         ):
             self.delete_resume_profile(int(parts[2]))
+            return
+        if len(parts) == 3 and parts[0] == "api" and parts[1] == "question-bank" and parts[2].isdigit():
+            self.delete_question(int(parts[2]))
+            return
+        if len(parts) == 3 and parts[0] == "api" and parts[1] == "interview-stories" and parts[2].isdigit():
+            self.delete_story(int(parts[2]))
+            return
+        if len(parts) == 3 and parts[0] == "api" and parts[1] == "company-notes" and parts[2].isdigit():
+            self.delete_company_note(int(parts[2]))
             return
         self.send_error_json("Not found", HTTPStatus.NOT_FOUND)
 
@@ -1054,6 +1168,336 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+
+    def get_job_prep(self, job_id: int) -> None:
+        with db() as conn:
+            job = conn.execute(
+                "SELECT id, company_name, position_name, current_stage, status FROM job_applications WHERE id = ?",
+                (job_id,),
+            ).fetchone()
+            if not job:
+                self.send_error_json("Job not found", HTTPStatus.NOT_FOUND)
+                return
+            questions = conn.execute(
+                "SELECT * FROM question_bank ORDER BY category, created_at"
+            ).fetchall()
+            stories = conn.execute(
+                "SELECT * FROM interview_stories ORDER BY created_at"
+            ).fetchall()
+            ready_rows = conn.execute(
+                "SELECT item_type, item_id, is_ready FROM interview_prep WHERE job_application_id = ?",
+                (job_id,),
+            ).fetchall()
+        ready_map = {(r["item_type"], r["item_id"]): r["is_ready"] for r in ready_rows}
+        q_list = []
+        for q in questions:
+            d = question_row_to_dict(q)
+            d["is_ready"] = ready_map.get(("question", d["id"]), 0)
+            q_list.append(d)
+        s_list = []
+        for s in stories:
+            d = story_row_to_dict(s)
+            d["is_ready"] = ready_map.get(("story", d["id"]), 0)
+            s_list.append(d)
+        self.send_json({"job": row_to_dict(job), "questions": q_list, "stories": s_list})
+
+    def toggle_prep_item(self, job_id: int) -> None:
+        body = self.read_json()
+        item_type = body.get("item_type")
+        item_id = body.get("item_id")
+        is_ready = int(bool(body.get("is_ready", 0)))
+        if item_type not in ("question", "story") or not isinstance(item_id, int):
+            self.send_error_json("Invalid params", HTTPStatus.BAD_REQUEST)
+            return
+        with db() as conn:
+            conn.execute(
+                """INSERT INTO interview_prep (job_application_id, item_type, item_id, is_ready)
+                   VALUES (?, ?, ?, ?)
+                   ON CONFLICT(job_application_id, item_type, item_id)
+                   DO UPDATE SET is_ready = excluded.is_ready""",
+                (job_id, item_type, item_id, is_ready),
+            )
+        self.send_json({"ok": True})
+
+    def get_weekly_review(self) -> None:
+        from datetime import timedelta
+        one_week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat(timespec="seconds")
+        with db() as conn:
+            new_jobs = conn.execute(
+                """
+                SELECT id, company_name, position_name, current_stage, status, created_at
+                FROM job_applications WHERE created_at >= ?
+                ORDER BY created_at DESC
+                """,
+                (one_week_ago,),
+            ).fetchall()
+            recent_timeline = conn.execute(
+                """
+                SELECT t.id, t.event_title, t.event_time, t.source, t.notes,
+                       j.id AS job_id, j.company_name, j.position_name
+                FROM timeline_events t
+                JOIN job_applications j ON t.job_application_id = j.id
+                WHERE t.created_at >= ?
+                ORDER BY t.created_at DESC
+                LIMIT 30
+                """,
+                (one_week_ago,),
+            ).fetchall()
+            stale_jobs = conn.execute(
+                """
+                SELECT id, company_name, position_name, current_stage, status, updated_at
+                FROM job_applications
+                WHERE updated_at < ?
+                AND status NOT LIKE '%REJECTED%'
+                ORDER BY updated_at ASC
+                """,
+                (one_week_ago,),
+            ).fetchall()
+        self.send_json({
+            "new_jobs": [row_to_dict(r) for r in new_jobs],
+            "recent_timeline": [row_to_dict(r) for r in recent_timeline],
+            "stale_jobs": [row_to_dict(r) for r in stale_jobs],
+            "period_days": 7,
+        })
+
+    def list_question_bank(self) -> None:
+        with db() as conn:
+            rows = conn.execute(
+                "SELECT * FROM question_bank ORDER BY updated_at DESC"
+            ).fetchall()
+        self.send_json([question_row_to_dict(r) for r in rows])
+
+    def get_question(self, question_id: int) -> None:
+        with db() as conn:
+            row = conn.execute(
+                "SELECT * FROM question_bank WHERE id = ?", (question_id,)
+            ).fetchone()
+        if not row:
+            self.send_error_json("Question not found", HTTPStatus.NOT_FOUND)
+            return
+        self.send_json(question_row_to_dict(row))
+
+    def create_question(self) -> None:
+        payload = self.read_json()
+        question = payload.get("question", "").strip()
+        if not question:
+            self.send_error_json("question is required")
+            return
+        answers = payload.get("answers", [])
+        if not isinstance(answers, list):
+            answers = []
+        tags = normalize_tags(payload.get("tags"))
+        now = utc_now()
+        with db() as conn:
+            cur = conn.execute(
+                """
+                INSERT INTO question_bank (question, category, tags, answers_json, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    question,
+                    payload.get("category", "").strip() or "general",
+                    json.dumps(tags, ensure_ascii=False),
+                    json.dumps(answers, ensure_ascii=False),
+                    now,
+                    now,
+                ),
+            )
+            qid = cur.lastrowid
+        self.get_question(qid)
+
+    def update_question(self, question_id: int) -> None:
+        payload = self.read_json()
+        with db() as conn:
+            row = conn.execute(
+                "SELECT id FROM question_bank WHERE id = ?", (question_id,)
+            ).fetchone()
+            if not row:
+                self.send_error_json("Question not found", HTTPStatus.NOT_FOUND)
+                return
+            updates: dict = {"updated_at": utc_now()}
+            if "question" in payload:
+                q = payload["question"].strip()
+                if not q:
+                    self.send_error_json("question is required")
+                    return
+                updates["question"] = q
+            if "category" in payload:
+                updates["category"] = payload["category"].strip() or "general"
+            if "tags" in payload:
+                updates["tags"] = json.dumps(normalize_tags(payload["tags"]), ensure_ascii=False)
+            if "answers" in payload:
+                answers = payload["answers"]
+                updates["answers_json"] = json.dumps(answers if isinstance(answers, list) else [], ensure_ascii=False)
+            assignments = ", ".join(f"{k} = ?" for k in updates)
+            conn.execute(
+                f"UPDATE question_bank SET {assignments} WHERE id = ?",
+                list(updates.values()) + [question_id],
+            )
+        self.get_question(question_id)
+
+    def delete_question(self, question_id: int) -> None:
+        with db() as conn:
+            conn.execute("DELETE FROM question_bank WHERE id = ?", (question_id,))
+        self.send_json({"ok": True})
+
+    def list_interview_stories(self) -> None:
+        with db() as conn:
+            rows = conn.execute(
+                "SELECT * FROM interview_stories ORDER BY updated_at DESC"
+            ).fetchall()
+        self.send_json([story_row_to_dict(r) for r in rows])
+
+    def get_story(self, story_id: int) -> None:
+        with db() as conn:
+            row = conn.execute(
+                "SELECT * FROM interview_stories WHERE id = ?", (story_id,)
+            ).fetchone()
+        if not row:
+            self.send_error_json("Story not found", HTTPStatus.NOT_FOUND)
+            return
+        self.send_json(story_row_to_dict(row))
+
+    def create_story(self) -> None:
+        payload = self.read_json()
+        title = payload.get("title", "").strip()
+        if not title:
+            self.send_error_json("title is required")
+            return
+        tags = normalize_tags(payload.get("tags"))
+        now = utc_now()
+        with db() as conn:
+            cur = conn.execute(
+                """
+                INSERT INTO interview_stories
+                    (title, situation, task, action, result, tags, notes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    title,
+                    payload.get("situation", "").strip(),
+                    payload.get("task", "").strip(),
+                    payload.get("action", "").strip(),
+                    payload.get("result", "").strip(),
+                    json.dumps(tags, ensure_ascii=False),
+                    payload.get("notes", "").strip(),
+                    now,
+                    now,
+                ),
+            )
+            story_id = cur.lastrowid
+        self.get_story(story_id)
+
+    def update_story(self, story_id: int) -> None:
+        payload = self.read_json()
+        with db() as conn:
+            row = conn.execute(
+                "SELECT id FROM interview_stories WHERE id = ?", (story_id,)
+            ).fetchone()
+            if not row:
+                self.send_error_json("Story not found", HTTPStatus.NOT_FOUND)
+                return
+            updates: dict = {"updated_at": utc_now()}
+            for field in ("title", "situation", "task", "action", "result", "notes"):
+                if field in payload:
+                    if field == "title" and not payload[field].strip():
+                        self.send_error_json("title is required")
+                        return
+                    updates[field] = payload[field].strip()
+            if "tags" in payload:
+                updates["tags"] = json.dumps(normalize_tags(payload["tags"]), ensure_ascii=False)
+            assignments = ", ".join(f"{k} = ?" for k in updates)
+            conn.execute(
+                f"UPDATE interview_stories SET {assignments} WHERE id = ?",
+                list(updates.values()) + [story_id],
+            )
+        self.get_story(story_id)
+
+    def delete_story(self, story_id: int) -> None:
+        with db() as conn:
+            conn.execute("DELETE FROM interview_stories WHERE id = ?", (story_id,))
+        self.send_json({"ok": True})
+
+    def list_company_notes(self) -> None:
+        with db() as conn:
+            rows = conn.execute(
+                "SELECT * FROM company_notes ORDER BY updated_at DESC"
+            ).fetchall()
+        self.send_json([company_note_row_to_dict(r) for r in rows])
+
+    def get_company_note(self, note_id: int) -> None:
+        with db() as conn:
+            row = conn.execute(
+                "SELECT * FROM company_notes WHERE id = ?", (note_id,)
+            ).fetchone()
+        if not row:
+            self.send_error_json("Company note not found", HTTPStatus.NOT_FOUND)
+            return
+        self.send_json(company_note_row_to_dict(row))
+
+    def create_company_note(self) -> None:
+        payload = self.read_json()
+        company_name = payload.get("company_name", "").strip()
+        if not company_name:
+            self.send_error_json("company_name is required")
+            return
+        tags = normalize_tags(payload.get("tags"))
+        now = utc_now()
+        with db() as conn:
+            cur = conn.execute(
+                """
+                INSERT INTO company_notes
+                    (company_name, industry, overview, culture, why_interested,
+                     interview_focus, notes, tags, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    company_name,
+                    payload.get("industry", "").strip(),
+                    payload.get("overview", "").strip(),
+                    payload.get("culture", "").strip(),
+                    payload.get("why_interested", "").strip(),
+                    payload.get("interview_focus", "").strip(),
+                    payload.get("notes", "").strip(),
+                    json.dumps(tags, ensure_ascii=False),
+                    now,
+                    now,
+                ),
+            )
+            note_id = cur.lastrowid
+        self.get_company_note(note_id)
+
+    def update_company_note(self, note_id: int) -> None:
+        payload = self.read_json()
+        with db() as conn:
+            row = conn.execute(
+                "SELECT id FROM company_notes WHERE id = ?", (note_id,)
+            ).fetchone()
+            if not row:
+                self.send_error_json("Company note not found", HTTPStatus.NOT_FOUND)
+                return
+            updates: dict = {"updated_at": utc_now()}
+            for field in ("company_name", "industry", "overview", "culture",
+                          "why_interested", "interview_focus", "notes"):
+                if field in payload:
+                    if field == "company_name" and not payload[field].strip():
+                        self.send_error_json("company_name is required")
+                        return
+                    updates[field] = payload[field].strip()
+            if "tags" in payload:
+                updates["tags"] = json.dumps(normalize_tags(payload["tags"]), ensure_ascii=False)
+            assignments = ", ".join(f"{k} = ?" for k in updates)
+            conn.execute(
+                f"UPDATE company_notes SET {assignments} WHERE id = ?",
+                list(updates.values()) + [note_id],
+            )
+        self.get_company_note(note_id)
+
+    def delete_company_note(self, note_id: int) -> None:
+        with db() as conn:
+            conn.execute("DELETE FROM company_notes WHERE id = ?", (note_id,))
+        self.send_json({"ok": True})
 
 
 def main() -> None:

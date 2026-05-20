@@ -9,45 +9,48 @@
   <body>
     <div class="app-shell">
       <aside class="sidebar">
-        <div>
-          <p class="eyebrow">Local CRM</p>
-          <h1>Job Tracker</h1>
-          <div class="sidebar-topline">
-            <button type="button" id="languageToggle">中文 / EN</button>
+        <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="折叠侧边栏">‹</button>
+        <div class="sidebar-content">
+          <div style="padding-top:12px">
+            <p class="eyebrow">Local CRM</p>
+            <h1>Job Tracker</h1>
+            <div class="sidebar-topline">
+              <button type="button" id="languageToggle">中文 / EN</button>
+            </div>
           </div>
+          <button class="summary-nav-button sidebar-home-btn" id="dashboardNavButton">Main Dashboard</button>
+          <details class="nav-section" open>
+            <summary>
+              <span>Track</span>
+            </summary>
+            <nav class="status-list" id="statusFilters"></nav>
+          </details>
+          <details class="nav-section" open>
+            <summary>
+              <span>Review</span>
+            </summary>
+            <button class="summary-nav-button" id="summaryNavButton">流程总结</button>
+            <button class="summary-nav-button" data-module-view="WEEKLY_REVIEW">Weekly Review</button>
+          </details>
+          <details class="nav-section" open>
+            <summary>
+              <span>Prepare</span>
+            </summary>
+            <button class="summary-nav-button" data-module-view="QUESTION_BANK">Question Bank</button>
+            <button class="summary-nav-button" data-module-view="INTERVIEW_STORIES">Interview Stories</button>
+            <button class="summary-nav-button" data-module-view="COMPANY_NOTES">Company Notes</button>
+            <button class="summary-nav-button" id="profilesNavButton">Resume Profiles</button>
+          </details>
+          <details class="nav-section" open>
+            <summary>
+              <span>Automation</span>
+            </summary>
+            <button class="summary-nav-button" data-module-view="EMAIL_SYNC">Email Sync</button>
+            <button class="summary-nav-button" data-module-view="AI_ASSISTANT">AI Assistant</button>
+            <button class="summary-nav-button" data-module-view="COVER_LETTERS">Cover Letters</button>
+            <button class="summary-nav-button" data-module-view="AUTO_APPLY">Auto Apply</button>
+          </details>
         </div>
-        <button class="summary-nav-button sidebar-home-btn" id="dashboardNavButton">Main Dashboard</button>
-        <details class="nav-section" open>
-          <summary>
-            <span>Track</span>
-          </summary>
-          <nav class="status-list" id="statusFilters"></nav>
-        </details>
-        <details class="nav-section" open>
-          <summary>
-            <span>Review</span>
-          </summary>
-          <button class="summary-nav-button" id="summaryNavButton">流程总结</button>
-          <button class="summary-nav-button" data-module-view="WEEKLY_REVIEW">Weekly Review</button>
-        </details>
-        <details class="nav-section" open>
-          <summary>
-            <span>Prepare</span>
-          </summary>
-          <button class="summary-nav-button" data-module-view="QUESTION_BANK">Question Bank</button>
-          <button class="summary-nav-button" data-module-view="INTERVIEW_STORIES">Interview Stories</button>
-          <button class="summary-nav-button" data-module-view="COMPANY_NOTES">Company Notes</button>
-          <button class="summary-nav-button" id="profilesNavButton">Resume Profiles</button>
-        </details>
-        <details class="nav-section" open>
-          <summary>
-            <span>Automation</span>
-          </summary>
-          <button class="summary-nav-button" data-module-view="EMAIL_SYNC">Email Sync</button>
-          <button class="summary-nav-button" data-module-view="AI_ASSISTANT">AI Assistant</button>
-          <button class="summary-nav-button" data-module-view="COVER_LETTERS">Cover Letters</button>
-          <button class="summary-nav-button" data-module-view="AUTO_APPLY">Auto Apply</button>
-        </details>
       </aside>
 
       <main class="main">
@@ -410,6 +413,21 @@
           <a id="profileDetailFile" class="choice-link" target="_blank" rel="noreferrer">打开原始简历文件</a>
         </div>
         <pre class="resume-text-preview" id="profileDetailText"></pre>
+      </div>
+    </dialog>
+
+    <dialog id="prepDialog">
+      <div class="dialog-form prep-dialog">
+        <header>
+          <div>
+            <p class="eyebrow" id="prepDialogEyebrow">面试备考</p>
+            <h3 id="prepDialogTitle"></h3>
+            <p class="muted" id="prepDialogMeta"></p>
+          </div>
+          <button type="button" class="icon-btn" data-close-prep aria-label="Close">×</button>
+        </header>
+        <div id="prepProgress"></div>
+        <div id="prepContent"></div>
       </div>
     </dialog>
 
