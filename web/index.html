@@ -12,27 +12,41 @@
         <div>
           <p class="eyebrow">Local CRM</p>
           <h1>Job Tracker</h1>
+          <div class="sidebar-topline">
+            <button type="button" id="languageToggle">中文 / EN</button>
+          </div>
         </div>
+        <button class="summary-nav-button sidebar-home-btn" id="dashboardNavButton">Main Dashboard</button>
         <details class="nav-section" open>
           <summary>
-            <span class="triangle">▸</span>
-            <span>Applications</span>
+            <span>Track</span>
           </summary>
           <nav class="status-list" id="statusFilters"></nav>
         </details>
         <details class="nav-section" open>
           <summary>
-            <span class="triangle">▸</span>
-            <span>Summarize</span>
+            <span>Review</span>
           </summary>
           <button class="summary-nav-button" id="summaryNavButton">流程总结</button>
+          <button class="summary-nav-button" data-module-view="WEEKLY_REVIEW">Weekly Review</button>
         </details>
         <details class="nav-section" open>
           <summary>
-            <span class="triangle">▸</span>
-            <span>Autofill</span>
+            <span>Prepare</span>
           </summary>
+          <button class="summary-nav-button" data-module-view="QUESTION_BANK">Question Bank</button>
+          <button class="summary-nav-button" data-module-view="INTERVIEW_STORIES">Interview Stories</button>
+          <button class="summary-nav-button" data-module-view="COMPANY_NOTES">Company Notes</button>
           <button class="summary-nav-button" id="profilesNavButton">Resume Profiles</button>
+        </details>
+        <details class="nav-section" open>
+          <summary>
+            <span>Automation</span>
+          </summary>
+          <button class="summary-nav-button" data-module-view="EMAIL_SYNC">Email Sync</button>
+          <button class="summary-nav-button" data-module-view="AI_ASSISTANT">AI Assistant</button>
+          <button class="summary-nav-button" data-module-view="COVER_LETTERS">Cover Letters</button>
+          <button class="summary-nav-button" data-module-view="AUTO_APPLY">Auto Apply</button>
         </details>
       </aside>
 
@@ -42,8 +56,12 @@
             <h2 id="mainTitle">Applications</h2>
             <p id="summary">Loading...</p>
           </div>
-          <button class="primary" id="newJobBtn">+ 新增岗位</button>
+          <div class="toolbar-actions">
+            <button class="primary" id="newJobBtn">+ 新增岗位</button>
+          </div>
         </header>
+
+        <section class="dashboard-view" id="dashboardView"></section>
 
         <div id="applicationsView">
           <section class="controls">
@@ -71,6 +89,7 @@
         </div>
 
         <section class="summary-view" id="summaryView" hidden></section>
+        <section class="module-view" id="moduleView" hidden></section>
         <section class="profiles-view" id="profilesView" hidden>
           <section class="personal-info-panel">
             <div>
@@ -78,7 +97,10 @@
               <h3>个人固定信息</h3>
               <p class="muted">姓名、电话、住址、签证等会在所有简历中共用；邮箱仍然跟随每份简历。</p>
             </div>
-            <button id="editPersonalInfoBtn">编辑个人信息</button>
+            <div class="toolbar-actions">
+              <button id="editPersonalInfoBtn">编辑个人信息</button>
+              <button type="button" id="profilesExitBtn">退出</button>
+            </div>
           </section>
           <div class="profile-grid" id="profilesGrid"></div>
           <div class="empty" id="profilesEmpty">还没有 Resume Profile，先上传一份简历。</div>
