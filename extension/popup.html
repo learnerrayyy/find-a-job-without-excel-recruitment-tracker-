@@ -17,11 +17,11 @@
       </header>
 
       <nav class="tabs">
-        <button type="button" class="tab active" data-tab="capture">保存岗位</button>
-        <button type="button" class="tab" data-tab="autofill">自动填入</button>
+        <button type="button" class="tab active" data-view-tab="capture">保存岗位</button>
+        <button type="button" class="tab" data-view-tab="autofill">自动填入</button>
       </nav>
 
-      <form id="captureForm" data-panel="capture">
+      <form id="captureForm" data-view="capture">
         <label>
           公司
           <input name="company_name" id="companyInput" required />
@@ -66,7 +66,7 @@
         </footer>
       </form>
 
-      <section class="autofill-panel" data-panel="autofill" hidden>
+      <section class="autofill-panel" data-view="autofill" hidden>
         <div class="profile-list" id="profileList"></div>
         <div class="hint" id="profileHint">
           选择一份简历后填入基础字段；如果网站要求上传 PDF，请使用原始文件入口手动上传。

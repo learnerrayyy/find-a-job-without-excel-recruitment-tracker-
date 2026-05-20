@@ -12,8 +12,8 @@ const message = document.querySelector("#message");
 const serverStatus = document.querySelector("#serverStatus");
 const captureHint = document.querySelector("#captureHint");
 const popupTitle = document.querySelector("#popupTitle");
-const tabs = document.querySelectorAll("[data-tab]");
-const panels = document.querySelectorAll("[data-panel]");
+const viewTabs = document.querySelectorAll("[data-view-tab]");
+const views = document.querySelectorAll("[data-view]");
 const profileList = document.querySelector("#profileList");
 const profileHint = document.querySelector("#profileHint");
 const reloadProfilesBtn = document.querySelector("#reloadProfilesBtn");
@@ -25,6 +25,26 @@ let isSaving = false;
 let profiles = [];
 let userProfile = {};
 let selectedProfileId = "";
+let hasCapturedPage = false;
+
+window.addEventListener("error", (event) => {
+  views.forEach((view) => {
+    view.hidden = view.dataset.view !== "capture";
+  });
+  popupTitle.textContent = "保存当前岗位";
+  setServerStatus("Error", "error");
+  setMessage(event.message || "插件运行出错。", "error");
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  views.forEach((view) => {
+    view.hidden = view.dataset.view !== "capture";
+  });
+  popupTitle.textContent = "保存当前岗位";
+  setServerStatus("Error", "error");
+  const reason = event.reason instanceof Error ? event.reason.message : String(event.reason || "");
+  setMessage(reason || "插件运行出错。", "error");
+});
 
 function setMessage(text, type = "") {
   message.textContent = text;
@@ -147,6 +167,9 @@ function autofillPageScript(profile) {
 }
 
 async function getActiveTab() {
+  if (!window.chrome || !chrome.tabs || !chrome.tabs.query) {
+    throw new Error("当前环境无法访问 Chrome 标签页，请确认这是从扩展弹窗打开的。");
+  }
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab;
 }
@@ -156,6 +179,9 @@ async function captureCurrentPage() {
   const tab = await getActiveTab();
   if (!tab || !tab.id) {
     throw new Error("找不到当前标签页");
+  }
+  if (!window.chrome || !chrome.scripting || !chrome.scripting.executeScript) {
+    throw new Error("当前环境无法读取页面，请确认插件权限已加载。");
   }
 
   const [result] = await chrome.scripting.executeScript({
@@ -174,7 +200,26 @@ async function captureCurrentPage() {
 
   const source = capturedPage.selectedText ? "选中文本" : "页面正文";
   captureHint.textContent = `已抓取：${source}，HTML 原始页面会一起保存。`;
+  hasCapturedPage = true;
   setMessage("请确认公司名和岗位名，然后保存。", "ok");
+}
+
+function showView(viewName) {
+  views.forEach((view) => {
+    view.hidden = view.dataset.view !== viewName;
+  });
+  viewTabs.forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.viewTab === viewName);
+  });
+  popupTitle.textContent = viewName === "autofill" ? "自动填入" : "保存当前岗位";
+  setMessage("");
+
+  if (viewName === "capture" && !hasCapturedPage) {
+    captureCurrentPage().catch((error) => setMessage(error.message, "error"));
+  }
+  if (viewName === "autofill") {
+    loadProfiles().catch((error) => setMessage(error.message, "error"));
+  }
 }
 
 async function checkServer() {
@@ -182,7 +227,6 @@ async function checkServer() {
     const response = await fetch(`${API_BASE}/api/jobs`);
     if (!response.ok) throw new Error("server failed");
     setServerStatus("Ready", "ok");
-    await loadProfiles();
   } catch (error) {
     setServerStatus("Offline", "error");
     setMessage("本地服务未启动。请先在项目目录运行：python3 server.py", "error");
@@ -304,15 +348,9 @@ recaptureBtn.addEventListener("click", () => {
   captureCurrentPage().catch((error) => setMessage(error.message, "error"));
 });
 form.addEventListener("submit", saveJob);
-tabs.forEach((tab) => {
+viewTabs.forEach((tab) => {
   tab.addEventListener("click", () => {
-    const nextTab = tab.dataset.tab;
-    tabs.forEach((item) => item.classList.toggle("active", item === tab));
-    panels.forEach((panel) => {
-      panel.hidden = panel.dataset.panel !== nextTab;
-    });
-    popupTitle.textContent = nextTab === "autofill" ? "自动填入" : "保存当前岗位";
-    setMessage("");
+    showView(tab.dataset.viewTab);
   });
 });
 reloadProfilesBtn.addEventListener("click", () => {
@@ -320,12 +358,24 @@ reloadProfilesBtn.addEventListener("click", () => {
     .then(() => setMessage("Profile 已刷新。", "ok"))
     .catch((error) => setMessage(error.message, "error"));
 });
-autofillBtn.addEventListener("click", () => {
-  autofillCurrentPage().catch((error) => {
-    autofillBtn.disabled = false;
-    setMessage(error.message, "error");
+function initPopup() {
+  showView("capture");
+  checkServer();
+  autofillBtn.addEventListener("click", () => {
+    autofillCurrentPage().catch((error) => {
+      autofillBtn.disabled = false;
+      setMessage(error.message, "error");
+    });
   });
-});
+}
 
-checkServer();
-captureCurrentPage().catch((error) => setMessage(error.message, "error"));
+try {
+  initPopup();
+} catch (error) {
+  views.forEach((view) => {
+    view.hidden = view.dataset.view !== "capture";
+  });
+  popupTitle.textContent = "保存当前岗位";
+  setServerStatus("Error", "error");
+  setMessage(error.message || "插件初始化失败。", "error");
+}
