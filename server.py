@@ -25,9 +25,9 @@ RESUMES_DIR = DATA_DIR / "resumes"
 DB_PATH = DATA_DIR / "tracker.db"
 WEB_DIR = ROOT / "web"
 
-DEFAULT_STAGE = "APPLIED"
-DEFAULT_STATUS = "APPLIED_SUCCESS"
-KNOWN_STAGES = {"APPLIED", "ASSESSMENT", "INTERVIEW"}
+DEFAULT_STAGE = "SAVED"
+DEFAULT_STATUS = "SAVED"
+KNOWN_STAGES = {"SAVED", "APPLIED", "ASSESSMENT", "INTERVIEW"}
 ALLOWED_RESUME_TYPES = {".pdf", ".docx", ".doc", ".txt"}
 DEFAULT_JOB_TYPE = "FULL_TIME"
 KNOWN_JOB_TYPES = {"PART_TIME", "FULL_TIME", "INTERNSHIP"}
@@ -47,6 +47,12 @@ def normalize_stage(value: str | None) -> str:
     if stage not in KNOWN_STAGES:
         raise ValueError("Invalid stage")
     return stage
+
+
+def normalize_stage_status(stage: str, status: str | None) -> str:
+    if stage == "SAVED":
+        return "SAVED"
+    return normalize_status(status)
 
 
 def normalize_job_type(value: str | None) -> str:
@@ -101,8 +107,8 @@ def init_db() -> None:
                 html_local_path TEXT,
                 screenshot_local_path TEXT,
                 apply_time TEXT,
-                current_stage TEXT NOT NULL DEFAULT 'APPLIED',
-                status TEXT NOT NULL DEFAULT 'APPLIED_SUCCESS',
+                current_stage TEXT NOT NULL DEFAULT 'SAVED',
+                status TEXT NOT NULL DEFAULT 'SAVED',
                 latest_email_id INTEGER,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
@@ -236,7 +242,14 @@ def init_db() -> None:
             UPDATE job_applications
             SET status = 'APPLIED_SUCCESS',
                 current_stage = 'APPLIED'
-            WHERE status IN ('DISCOVERED', 'SAVED', 'APPLIED')
+            WHERE status IN ('DISCOVERED', 'APPLIED')
+            """
+        )
+        conn.execute(
+            """
+            UPDATE job_applications
+            SET status = 'SAVED'
+            WHERE current_stage = 'SAVED'
             """
         )
         conn.execute(
@@ -732,8 +745,11 @@ class Handler(BaseHTTPRequestHandler):
             path = "/index.html"
         target = (WEB_DIR / path.lstrip("/")).resolve()
         if not str(target).startswith(str(WEB_DIR.resolve())) or not target.exists():
-            self.send_response(HTTPStatus.NOT_FOUND)
-            self.end_headers()
+            if path.startswith("/api/"):
+                self.send_error_json(f"Not found: {path}", HTTPStatus.NOT_FOUND)
+            else:
+                self.send_response(HTTPStatus.NOT_FOUND)
+                self.end_headers()
             return
         content_type = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
         body = target.read_bytes()
@@ -789,7 +805,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             stage = normalize_stage(payload.get("current_stage"))
-            status = normalize_status(payload.get("status"))
+            status = normalize_stage_status(stage, payload.get("status"))
             job_type = normalize_job_type(payload.get("job_type"))
         except ValueError as error:
             self.send_error_json(str(error))
@@ -820,7 +836,7 @@ class Handler(BaseHTTPRequestHandler):
                     payload.get("apply_url", "").strip(),
                     md_path,
                     html_path,
-                    payload.get("apply_time", "").strip(),
+                    "" if stage == "SAVED" else payload.get("apply_time", "").strip(),
                     stage,
                     status,
                     now,
@@ -836,7 +852,15 @@ class Handler(BaseHTTPRequestHandler):
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
-                (job_id, "APPLIED", "岗位已投递", now, "manual", "", now),
+                (
+                    job_id,
+                    "SAVED" if stage == "SAVED" else "APPLIED",
+                    "岗位已收藏" if stage == "SAVED" else "岗位已投递",
+                    now,
+                    "manual",
+                    "",
+                    now,
+                ),
             )
         self.get_job(job_id)
 
@@ -871,6 +895,9 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError as error:
                 self.send_error_json(str(error))
                 return
+        if updates.get("current_stage") == "SAVED":
+            updates["status"] = "SAVED"
+            updates["apply_time"] = ""
         if not updates:
             self.send_error_json("No supported fields to update")
             return
@@ -896,7 +923,7 @@ class Handler(BaseHTTPRequestHandler):
                 title_parts = []
                 if stage_changed:
                     title_parts.append(f"阶段更新为 {updates['current_stage']}")
-                if status_changed:
+                if status_changed and updates.get("current_stage") != "SAVED":
                     title_parts.append(f"子状态更新为 {updates['status']}")
                 conn.execute(
                     """
@@ -1171,6 +1198,12 @@ class Handler(BaseHTTPRequestHandler):
 
 
     def get_job_prep(self, job_id: int) -> None:
+        try:
+         return self._get_job_prep(job_id)
+        except Exception as exc:
+            self.send_error_json(str(exc), HTTPStatus.INTERNAL_SERVER_ERROR)
+
+    def _get_job_prep(self, job_id: int) -> None:
         with db() as conn:
             job = conn.execute(
                 "SELECT id, company_name, position_name, current_stage, status FROM job_applications WHERE id = ?",
@@ -1250,7 +1283,18 @@ class Handler(BaseHTTPRequestHandler):
                 FROM job_applications
                 WHERE updated_at < ?
                 AND status NOT LIKE '%REJECTED%'
+                AND current_stage NOT IN ('SAVED')
                 ORDER BY updated_at ASC
+                """,
+                (one_week_ago,),
+            ).fetchall()
+            rejected_this_week = conn.execute(
+                """
+                SELECT id, company_name, position_name, current_stage, status, updated_at
+                FROM job_applications
+                WHERE status LIKE '%REJECTED%'
+                AND updated_at >= ?
+                ORDER BY updated_at DESC
                 """,
                 (one_week_ago,),
             ).fetchall()
@@ -1258,6 +1302,7 @@ class Handler(BaseHTTPRequestHandler):
             "new_jobs": [row_to_dict(r) for r in new_jobs],
             "recent_timeline": [row_to_dict(r) for r in recent_timeline],
             "stale_jobs": [row_to_dict(r) for r in stale_jobs],
+            "rejected_this_week": [row_to_dict(r) for r in rejected_this_week],
             "period_days": 7,
         })
 

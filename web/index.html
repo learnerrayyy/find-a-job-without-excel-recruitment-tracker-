@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Job Application Tracker</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="app-shell">
@@ -102,7 +102,6 @@
             </div>
             <div class="toolbar-actions">
               <button id="editPersonalInfoBtn">编辑个人信息</button>
-              <button type="button" id="profilesExitBtn">退出</button>
             </div>
           </section>
           <div class="profile-grid" id="profilesGrid"></div>
@@ -396,6 +395,10 @@
             <input name="right_to_work" id="personalRightToWork" />
           </label>
         </div>
+        <label style="margin-top:12px">
+          我的技能
+          <textarea name="my_skills" id="personalMySkills" rows="3" placeholder="例如：Python, SQL, React, AWS, Docker, Pandas"></textarea>
+        </label>
         <footer>
           <button value="cancel">取消</button>
           <button class="primary" value="default">保存</button>
@@ -431,6 +434,6 @@
       </div>
     </dialog>
 
-    <script src="/app.js"></script>
+    <script src="app.js"></script>
   </body>
 </html>

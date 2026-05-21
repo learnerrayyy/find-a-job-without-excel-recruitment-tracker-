@@ -1,6 +1,6 @@
 const NAV_FILTERS = ["ALL", "PART_TIME", "FULL_TIME", "INTERNSHIP", "REJECTED"];
 const JOB_TYPE_OPTIONS = ["PART_TIME", "FULL_TIME", "INTERNSHIP"];
-const STAGE_OPTIONS = ["APPLIED", "ASSESSMENT", "INTERVIEW"];
+const STAGE_OPTIONS = ["SAVED", "APPLIED", "ASSESSMENT", "INTERVIEW"];
 const MODULE_VIEWS = {
   WEEKLY_REVIEW: {
     title: "每周复盘",
@@ -103,6 +103,7 @@ const MODULE_TITLE_KEYS = {
 };
 
 const SUBSTATUS_BY_STAGE = {
+  SAVED: [],
   APPLIED: ["APPLIED_SUCCESS", "APPLIED_REJECTED"],
   ASSESSMENT: [
     "ASSESSMENT_PENDING",
@@ -136,6 +137,8 @@ const I18N = {
     dashboardInterviews: "进入面试",
     recentApplications: "最近岗位",
     noRecentApplications: "暂无最近岗位",
+    latestWeeklyNote: "最近复盘",
+    noWeeklyNote: "还没有保存复盘，先写一条本周总结。",
     quickActions: "下一步",
     goApplications: "查看岗位明细",
     goWeekly: "打开每周复盘",
@@ -159,7 +162,7 @@ const I18N = {
     languageToggle: "EN",
     searchPlaceholder: "搜索公司、岗位、链接",
     refresh: "刷新",
-    tableApplyTime: "投递时间",
+    tableApplyTime: "记录时间",
     tablePosition: "岗位名字",
     tableType: "分类",
     tableStage: "阶段",
@@ -226,6 +229,13 @@ const I18N = {
     visaStatus: "签证状态",
     sponsorship: "是否需要工作签证担保",
     rightToWork: "工作权限",
+    mySkills: "我的技能",
+    mySkillsHint: "用逗号分隔，例如：Python, SQL, React, AWS",
+    techGapTitle: "技术栈匹配",
+    techGapMatch: "已掌握",
+    techGapMissing: "待补充",
+    techGapNoJd: "暂无 JD 内容，无法分析技术栈。",
+    techGapNoSkills: "请先在「个人固定信息」中填写「我的技能」。",
     openFile: "打开文件",
     openOriginalResume: "打开原始简历文件",
     detail: "查看详细",
@@ -246,12 +256,28 @@ const I18N = {
     sankeyRejected: "被拒",
     weeklyReviewPeriod: "本周动态（过去 7 天）",
     newThisWeek: "本周新增岗位",
-    recentTimeline: "近期动态",
-    staleApps: "待跟进（7天+未更新）",
+    recentTimeline: "本周进展",
+    staleApps: "需要跟进",
+    rejectedThisWeek: "本周被拒",
+    weeklyNotes: "本周复盘笔记",
+    weeklyNotesPreview: "已保存的复盘",
+    weeklyNotesSave: "保存笔记",
+    weeklyNotesSaved: "已保存",
+    weeklyNotesPlaceholder: "这周有哪些收获？哪里没做好？下周的重点是什么？",
     noNewApps: "本周没有新增岗位",
-    noRecentTimeline: "暂无近期动态",
-    noStaleApps: "没有超过 7 天未更新的岗位",
+    noRecentTimeline: "本周没有进展动态",
+    noStaleApps: "没有需要跟进的岗位",
+    noRejectedThisWeek: "本周没有被拒",
     lastUpdated: "最后更新",
+    followUpUrgent: "紧急",
+    conversionRates: "转化率",
+    responseRate: "获得回复率",
+    assessmentRate: "进入笔试率",
+    interviewRate: "进入面试率",
+    rejectionRate: "被拒率",
+    substatusDistrib: "当前状态分布",
+    savedStage: "已收藏",
+    appliedStage: "已投递（活跃）",
     addQuestion: "+ 新增问题",
     editQuestion: "编辑问题",
     questionTextLabel: "问题描述",
@@ -305,7 +331,7 @@ const I18N = {
     phCompanyFocus: "需要重点准备的方向",
     back: "← 返回",
     cardView: "卡片",
-    tableView: "表格",
+    listView: "列表",
     filterPlaceholder: "筛选...",
     hintQuestion: "写下这道面试题，可以是行为类、技术类或动机类问题",
     hintCategory: "用于分组和筛选，例如：behavioral、technical、motivation",
@@ -344,6 +370,8 @@ const I18N = {
     dashboardInterviews: "Reached interview",
     recentApplications: "Recent applications",
     noRecentApplications: "No recent applications yet",
+    latestWeeklyNote: "Latest reflection",
+    noWeeklyNote: "No saved reflection yet. Start with this week's note.",
     quickActions: "Next steps",
     goApplications: "Review applications",
     goWeekly: "Open weekly review",
@@ -367,7 +395,7 @@ const I18N = {
     languageToggle: "中文",
     searchPlaceholder: "Search company, role, links",
     refresh: "Refresh",
-    tableApplyTime: "Applied",
+    tableApplyTime: "Date",
     tablePosition: "Role",
     tableType: "Type",
     tableStage: "Stage",
@@ -434,6 +462,13 @@ const I18N = {
     visaStatus: "Visa status",
     sponsorship: "Needs sponsorship",
     rightToWork: "Right to work",
+    mySkills: "My Skills",
+    mySkillsHint: "Comma-separated, e.g. Python, SQL, React, AWS",
+    techGapTitle: "Tech Stack Match",
+    techGapMatch: "I know this",
+    techGapMissing: "Need to learn",
+    techGapNoJd: "No JD content saved — cannot analyse tech stack.",
+    techGapNoSkills: "Fill in \"My Skills\" in Personal Info first.",
     openFile: "Open file",
     openOriginalResume: "Open original resume",
     detail: "Details",
@@ -453,13 +488,29 @@ const I18N = {
     sankeyInterview: "Interview",
     sankeyRejected: "Rejected",
     weeklyReviewPeriod: "This week (past 7 days)",
-    newThisWeek: "New applications this week",
-    recentTimeline: "Recent activity",
-    staleApps: "Follow up needed (7+ days)",
+    newThisWeek: "New this week",
+    recentTimeline: "Progress this week",
+    staleApps: "Follow up needed",
+    rejectedThisWeek: "Rejected this week",
+    weeklyNotes: "Weekly reflection",
+    weeklyNotesPreview: "Saved reflection",
+    weeklyNotesSave: "Save note",
+    weeklyNotesSaved: "Saved",
+    weeklyNotesPlaceholder: "What went well? What to improve? Focus for next week?",
     noNewApps: "No new applications this week",
-    noRecentTimeline: "No recent activity",
-    noStaleApps: "No stale applications",
+    noRecentTimeline: "No activity logged this week",
+    noStaleApps: "Nothing needs following up",
+    noRejectedThisWeek: "No rejections this week",
     lastUpdated: "Last updated",
+    followUpUrgent: "Urgent",
+    conversionRates: "Conversion rates",
+    responseRate: "Response rate",
+    assessmentRate: "Assessment rate",
+    interviewRate: "Interview rate",
+    rejectionRate: "Rejection rate",
+    substatusDistrib: "Current status breakdown",
+    savedStage: "Saved",
+    appliedStage: "Applied (active)",
     addQuestion: "+ New question",
     editQuestion: "Edit question",
     questionTextLabel: "Question",
@@ -513,7 +564,7 @@ const I18N = {
     phCompanyFocus: "Key areas to prepare for this company",
     back: "← Back",
     cardView: "Cards",
-    tableView: "Table",
+    listView: "List",
     filterPlaceholder: "Filter...",
     hintQuestion: "Write out the interview question — behavioral, technical, or motivational",
     hintCategory: "Used for grouping and filtering, e.g. behavioral, technical, motivation",
@@ -547,6 +598,7 @@ const STATUS_LABELS = {
     PART_TIME: "兼职",
     FULL_TIME: "全职",
     INTERNSHIP: "实习",
+    SAVED: "感兴趣",
     APPLIED_SUCCESS: "投递成功",
     APPLIED_REJECTED: "投递阶段被拒",
     ASSESSMENT_PENDING: "笔试未完成",
@@ -567,6 +619,7 @@ const STATUS_LABELS = {
     PART_TIME: "Part time",
     FULL_TIME: "Full time",
     INTERNSHIP: "Internship",
+    SAVED: "Interested",
     APPLIED_SUCCESS: "Applied",
     APPLIED_REJECTED: "Rejected after application",
     ASSESSMENT_PENDING: "Assessment pending",
@@ -585,8 +638,8 @@ const STATUS_LABELS = {
 };
 
 const STAGE_LABELS = {
-  zh: { APPLIED: "投递", ASSESSMENT: "笔试", INTERVIEW: "面试" },
-  en: { APPLIED: "Applied", ASSESSMENT: "Assessment", INTERVIEW: "Interview" },
+  zh: { SAVED: "收藏", APPLIED: "投递", ASSESSMENT: "笔试", INTERVIEW: "面试" },
+  en: { SAVED: "Saved", APPLIED: "Applied", ASSESSMENT: "Assessment", INTERVIEW: "Interview" },
 };
 
 const JOB_TYPE_LABELS = {
@@ -728,7 +781,6 @@ const profilesEmpty = document.querySelector("#profilesEmpty");
 const profilesNavButton = document.querySelector("#profilesNavButton");
 const moduleNavButtons = document.querySelectorAll("[data-module-view]");
 const editPersonalInfoBtn = document.querySelector("#editPersonalInfoBtn");
-const profilesExitBtn = document.querySelector("#profilesExitBtn");
 const jobDialog = document.querySelector("#jobDialog");
 const jobForm = document.querySelector("#jobForm");
 const jobTypeSelect = document.querySelector("#jobTypeSelect");
@@ -893,7 +945,6 @@ function updateStaticText() {
   emptyState.textContent = t("emptyJobs");
   profilesEmpty.textContent = t("profilesEmpty");
   editPersonalInfoBtn.textContent = t("editPersonalInfo");
-  profilesExitBtn.textContent = t("exit");
 
   const tableLabels = [
     t("tableApplyTime"),
@@ -958,6 +1009,7 @@ function updateStaticText() {
     ["#personalInfoForm label:nth-of-type(12)", "visaStatus"],
     ["#personalInfoForm label:nth-of-type(13)", "sponsorship"],
     ["#personalInfoForm label:nth-of-type(14)", "rightToWork"],
+    ["#personalInfoForm label:nth-of-type(15)", "mySkills"],
   ].forEach(([selector, key]) => setLeadingLabelText(selector, I18N[currentLang][key] || key));
 
   [
@@ -1000,9 +1052,14 @@ async function api(path, options = {}) {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch (_) {
+    throw new Error(`HTTP ${response.status} — empty or non-JSON response from ${path}`);
+  }
   if (!response.ok) {
-    throw new Error(data.error || "Request failed");
+    throw new Error(data.error || `HTTP ${response.status}`);
   }
   return data;
 }
@@ -1047,9 +1104,10 @@ function renderStatusControls() {
     });
   });
 
-  renderStageSelect(stageSelect, "APPLIED");
+  renderStageSelect(stageSelect, "SAVED");
   renderJobTypeSelect(jobTypeSelect, "FULL_TIME");
-  renderSubStatusSelect(subStatusSelect, "APPLIED", "APPLIED_SUCCESS");
+  renderSubStatusSelect(subStatusSelect, "SAVED", "SAVED");
+  syncApplicationFieldsForStage("SAVED", jobForm.elements.apply_time, subStatusSelect);
 }
 
 function renderStageSelect(select, value) {
@@ -1065,6 +1123,7 @@ function renderJobTypeSelect(select, value = "FULL_TIME") {
 }
 
 function subStatusOptionsForStage(stage, value) {
+  if (stage === "SAVED") return "";
   const known = SUBSTATUS_BY_STAGE[stage] || [];
   const hasCustomValue = value && !known.includes(value);
   return [
@@ -1077,8 +1136,29 @@ function subStatusOptionsForStage(stage, value) {
 }
 
 function renderSubStatusSelect(select, stage, value) {
+  const field = select.closest("label");
+  if (stage === "SAVED") {
+    select.innerHTML = "";
+    select.disabled = true;
+    if (field) field.hidden = true;
+    return;
+  }
+  select.disabled = false;
+  if (field) field.hidden = false;
   const fallback = (SUBSTATUS_BY_STAGE[stage] || [])[0] || "";
   select.innerHTML = subStatusOptionsForStage(stage, value || fallback);
+}
+
+function syncApplicationFieldsForStage(stage, applyInput, statusSelect) {
+  const applyField = applyInput?.closest("label");
+  const statusField = statusSelect?.closest("label");
+  const isSaved = stage === "SAVED";
+  if (applyField) applyField.hidden = isSaved;
+  if (statusField) statusField.hidden = isSaved;
+  if (applyInput) {
+    applyInput.disabled = isSaved;
+    if (isSaved) applyInput.value = "";
+  }
 }
 
 function dateInputValue(value) {
@@ -1094,7 +1174,7 @@ function renderJobs() {
   summary.textContent = t("jobsCount", { count: jobs.length });
   emptyState.style.display = jobs.length ? "none" : "block";
   jobsTable.innerHTML = jobs.map((job) => `
-    <tr class="${isRejected(job) ? "rejected-row" : ""}">
+    <tr class="${isRejected(job) ? "rejected-row" : job.current_stage === "SAVED" ? "saved-row" : ""}">
       <td>${escapeHtml(formatDate(job.apply_time || job.created_at))}</td>
       <td>
         <button class="job-link" data-action="jd" data-id="${job.id}">
@@ -1117,9 +1197,11 @@ function renderJobs() {
         </select>
       </td>
       <td>
-        <select class="inline-status" data-action="substatus" data-id="${job.id}">
-          ${subStatusOptionsForStage(job.current_stage, job.status)}
-        </select>
+        ${job.current_stage === "SAVED"
+          ? `<span class="muted">${statusLabel("SAVED")}</span>`
+          : `<select class="inline-status" data-action="substatus" data-id="${job.id}">
+              ${subStatusOptionsForStage(job.current_stage, job.status)}
+            </select>`}
       </td>
       <td>
         <button class="timeline-button" data-action="timeline" data-id="${job.id}">
@@ -1128,7 +1210,7 @@ function renderJobs() {
       </td>
       <td>
         <div class="operation-stack">
-          <button class="prep-btn" data-action="prep" data-id="${job.id}">${t("prepBtn")}</button>
+          ${job.current_stage === "SAVED" ? "" : `<button class="prep-btn" data-action="prep" data-id="${job.id}">${t("prepBtn")}</button>`}
           <button data-action="edit" data-id="${job.id}">${t("edit")}</button>
           <button class="danger-button" data-action="delete" data-id="${job.id}">${t("delete")}</button>
         </div>
@@ -1148,10 +1230,14 @@ function renderJobs() {
       const job = jobs.find((item) => String(item.id) === select.dataset.id);
       if (!job) return;
       const nextStage = select.value;
-      const nextStatus = (SUBSTATUS_BY_STAGE[nextStage] || [])[0] || job.status;
+      const nextStatus = nextStage === "SAVED" ? "SAVED" : (SUBSTATUS_BY_STAGE[nextStage] || [])[0] || job.status;
       await api(`/api/jobs/${job.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ current_stage: nextStage, status: nextStatus }),
+        body: JSON.stringify({
+          current_stage: nextStage,
+          status: nextStatus,
+          apply_time: nextStage === "SAVED" ? "" : job.apply_time,
+        }),
       });
       if (timelineJob && timelineJob.id === job.id) {
         timelineJob = { ...timelineJob, current_stage: nextStage, status: nextStatus };
@@ -1286,6 +1372,10 @@ function percent(part, total) {
 
 function buildSummaryStats() {
   const total = allJobs.length;
+  const savedTotal = allJobs.filter((job) => job.current_stage === "SAVED").length;
+  // Sankey / funnel only counts jobs that have been submitted (not just saved)
+  const appliedJobs = allJobs.filter((job) => job.current_stage !== "SAVED");
+  const appliedTotal = appliedJobs.length;
   const appliedRejectedJobs = allJobs.filter((job) => job.status === "APPLIED_REJECTED");
   const assessmentTotal = allJobs.filter((job) => (
     job.current_stage === "ASSESSMENT" || job.current_stage === "INTERVIEW"
@@ -1296,6 +1386,8 @@ function buildSummaryStats() {
 
   return {
     total,
+    savedTotal,
+    appliedTotal,
     appliedRejected: appliedRejectedJobs.length,
     assessmentTotal,
     assessmentRejected: assessmentRejectedJobs.length,
@@ -1307,7 +1399,7 @@ function buildSummaryStats() {
       interview: interviewRejectedJobs,
     },
     activeOrUnknown: Math.max(
-      total - appliedRejectedJobs.length - assessmentRejectedJobs.length - interviewRejectedJobs.length,
+      appliedTotal - appliedRejectedJobs.length - assessmentRejectedJobs.length - interviewRejectedJobs.length,
       0
     ),
   };
@@ -1346,7 +1438,10 @@ function sankeyNode({ x, y, title, count, total, tone = "", tooltip = "" }) {
 }
 
 function renderSankey(stats) {
-  const total = stats.total;
+  const total = stats.appliedTotal; // SAVED jobs are not part of the funnel
+  if (total === 0) {
+    return `<div class="sankey-card sankey-empty"><p class="muted">投递过的岗位将在这里显示漏斗图。</p></div>`;
+  }
   const rejectedTotal = stats.appliedRejected + stats.assessmentRejected + stats.interviewRejected;
   const stageNodes = [
     { key: "root", title: t("sankeyRoot"), count: total, x: 80, y: 140 },
@@ -1379,25 +1474,19 @@ function renderSankey(stats) {
           ${assessment ? sankeyFlow({
             from: { x: root.x + 126, y: root.y + 29 },
             to: { x: assessment.x, y: assessment.y + 29 },
-            count: stats.assessmentTotal,
-            total,
-            color: "#ff8ba7",
+            count: stats.assessmentTotal, total, color: "#ff8ba7",
             title: `${t("enteredAssessment")}: ${stats.assessmentTotal}`,
           }) : ""}
           ${interview ? sankeyFlow({
             from: { x: (assessment || root).x + 126, y: (assessment || root).y + 29 },
             to: { x: interview.x, y: interview.y + 29 },
-            count: stats.interviewTotal,
-            total,
-            color: "#ff8ba7",
+            count: stats.interviewTotal, total, color: "#ff8ba7",
             title: `${t("enteredInterview")}: ${stats.interviewTotal}`,
           }) : ""}
           ${rejectedNode ? sankeyFlow({
             from: { x: root.x + 63, y: root.y + 58 },
             to: { x: rejectedNode.x + 63, y: rejectedNode.y },
-            count: rejectedTotal,
-            total,
-            color: "#d94f79",
+            count: rejectedTotal, total, color: "#d94f79",
             title: rejectedTooltip || `${t("sankeyRejected")}: ${rejectedTotal}`,
           }) : ""}
         </g>
@@ -1411,25 +1500,66 @@ function renderSankey(stats) {
 
 function renderSummaryView() {
   const stats = buildSummaryStats();
-  summary.textContent = t("summaryText", { total: stats.total, active: stats.activeOrUnknown });
+  summary.textContent = t("summaryText", { total: stats.appliedTotal, active: stats.activeOrUnknown });
+
+  // Conversion rates (exclude SAVED from denominator)
+  const appliedBase = allJobs.filter((j) => j.current_stage !== "SAVED").length;
+  const totalRejected = stats.appliedRejected + stats.assessmentRejected + stats.interviewRejected;
+  const gotReply = allJobs.filter((j) => j.current_stage !== "SAVED" && j.status !== "APPLIED_SUCCESS").length;
+  const pct = (n, d) => d > 0 ? `${Math.round((n / d) * 100)}%` : "—";
+
+  const rateCards = [
+    { label: t("responseRate"), value: pct(gotReply, appliedBase), note: `${gotReply}/${appliedBase}` },
+    { label: t("assessmentRate"), value: pct(stats.assessmentTotal, appliedBase), note: `${stats.assessmentTotal}/${appliedBase}` },
+    { label: t("interviewRate"), value: pct(stats.interviewTotal, appliedBase), note: `${stats.interviewTotal}/${appliedBase}` },
+    { label: t("rejectionRate"), value: pct(totalRejected, appliedBase), note: `${totalRejected}/${appliedBase}` },
+  ];
+
+  // Substatus distribution — count jobs per substatus, all stages
+  const subCounts = {};
+  allJobs.forEach((j) => {
+    const key = j.status || "UNKNOWN";
+    subCounts[key] = (subCounts[key] || 0) + 1;
+  });
+  const subEntries = Object.entries(subCounts)
+    .sort((a, b) => b[1] - a[1])
+    .filter(([k]) => k !== "UNKNOWN");
+  const maxCount = subEntries.length > 0 ? subEntries[0][1] : 1;
+
   summaryView.innerHTML = `
     <div class="summary-panel">
-      <div class="view-exit-row">
-        <button type="button" data-view-exit>${t("exit")}</button>
-      </div>
       ${renderSankey(stats)}
+
+      <div class="summary-metrics-grid">
+        ${rateCards.map(({ label, value, note }) => `
+          <div class="summary-metric-card">
+            <span class="summary-metric-value">${value}</span>
+            <span class="summary-metric-label">${escapeHtml(label)}</span>
+            <span class="summary-metric-note">${note}</span>
+          </div>`).join("")}
+      </div>
+
+      ${subEntries.length > 0 ? `
+        <div class="summary-distrib">
+          <h4 class="summary-distrib-title">${t("substatusDistrib")}</h4>
+          ${subEntries.map(([key, count]) => `
+            <div class="summary-distrib-row">
+              <span class="summary-distrib-label">${escapeHtml(statusLabel(key))}</span>
+              <div class="summary-distrib-bar-wrap">
+                <div class="summary-distrib-bar" style="width:${Math.round((count / maxCount) * 100)}%"></div>
+              </div>
+              <span class="summary-distrib-count">${count}</span>
+            </div>`).join("")}
+        </div>` : ""}
     </div>
   `;
-  summaryView.querySelector("[data-view-exit]").addEventListener("click", () => {
-    activeView = "DASHBOARD";
-    loadJobs();
-  });
 }
 
 function renderDashboardView() {
   const stats = buildSummaryStats();
   const rejectedTotal = stats.appliedRejected + stats.assessmentRejected + stats.interviewRejected;
   const recentJobs = allJobs.slice(0, 5);
+  const weeklyNote = latestWeeklyNote();
   summary.textContent = t("dashboardSummary");
   dashboardView.innerHTML = `
     <section class="dashboard-grid">
@@ -1478,6 +1608,13 @@ function renderDashboardView() {
           <button type="button" data-dashboard-go="PROFILES">${t("resumeProfiles")}</button>
         </div>
       </article>
+
+      <article class="dashboard-card">
+        <h3>${t("latestWeeklyNote")}</h3>
+        ${weeklyNote
+          ? `<button type="button" class="dashboard-note-preview" data-dashboard-go="WEEKLY_REVIEW">${escapeHtml(weeklyNote)}</button>`
+          : `<button type="button" class="dashboard-note-preview dashboard-note-empty" data-dashboard-go="WEEKLY_REVIEW">${t("noWeeklyNote")}</button>`}
+      </article>
     </section>
   `;
   dashboardView.querySelectorAll("[data-dashboard-go]").forEach((button) => {
@@ -1497,58 +1634,150 @@ function renderDashboardView() {
   });
 }
 
+function isoWeekKey() {
+  const now = new Date();
+  const jan4 = new Date(now.getFullYear(), 0, 4);
+  const startOfWeek1 = new Date(jan4);
+  startOfWeek1.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+  const weekNum = Math.floor((now - startOfWeek1) / (7 * 864e5)) + 1;
+  return `week_note_${now.getFullYear()}_${String(weekNum).padStart(2, "0")}`;
+}
+
+function latestWeeklyNote() {
+  return Object.entries(userProfile)
+    .filter(([key, value]) => key.startsWith("week_note_") && String(value || "").trim())
+    .sort(([a], [b]) => b.localeCompare(a))[0]?.[1] || "";
+}
+
+function weeklyJobRow(job, meta) {
+  return `
+    <div class="module-item-row">
+      <div>
+        <strong>${escapeHtml(job.position_name)}</strong>
+        <span class="muted"> · ${escapeHtml(job.company_name)}</span>
+      </div>
+      <span class="muted">${meta}</span>
+    </div>`;
+}
+
 async function renderWeeklyReviewView() {
-  const data = await api("/api/weekly-review");
+  moduleView.innerHTML = `<p class="muted" style="padding:24px">加载中…</p>`;
+  let data;
+  try {
+    data = await api("/api/weekly-review");
+  } catch (err) {
+    if (activeView !== "WEEKLY_REVIEW") return;
+    moduleView.innerHTML = `<p style="padding:24px;color:var(--danger)">${escapeHtml(String(err))}</p>`;
+    return;
+  }
+  if (activeView !== "WEEKLY_REVIEW") return;
   summary.textContent = t("weeklyReviewPeriod");
+
+  const weekKey = isoWeekKey();
+  const savedNote = userProfile[weekKey] || "";
+
+  const rejectedThisWeek = data.rejected_this_week || [];
+  const staleJobs = data.stale_jobs || [];
+  const newJobs = data.new_jobs || [];
+  const recentTimeline = data.recent_timeline || [];
+
+  const urgentStale = staleJobs.filter((j) => ["ASSESSMENT", "INTERVIEW"].includes(j.current_stage));
+  const normalStale = staleJobs.filter((j) => !["ASSESSMENT", "INTERVIEW"].includes(j.current_stage));
+
+  function staleList(jobs) {
+    return jobs.map((job) => weeklyJobRow(job,
+      `${stageLabel(job.current_stage)} · ${t("lastUpdated")}: ${formatDate(job.updated_at)}`
+    )).join("");
+  }
+
   moduleView.innerHTML = `
     <div class="weekly-review">
-      <section class="weekly-section">
+
+      <section class="weekly-section weekly-section-rejected">
         <div class="weekly-section-header">
-          <h3>${t("newThisWeek")}</h3>
-          <span class="tag-count">${data.new_jobs.length}</span>
+          <h3>${t("rejectedThisWeek")}</h3>
+          <span class="tag-count ${rejectedThisWeek.length > 0 ? "tag-count-bad" : ""}">${rejectedThisWeek.length}</span>
         </div>
-        ${data.new_jobs.length ? `<div class="module-list">${data.new_jobs.map((job) => `
-          <div class="module-item-row">
-            <div>
-              <strong>${escapeHtml(job.position_name)}</strong>
-              <span class="muted"> · ${escapeHtml(job.company_name)}</span>
-            </div>
-            <span class="muted">${stageLabel(job.current_stage)} · ${formatDate(job.created_at)}</span>
-          </div>
-        `).join("")}</div>` : `<p class="muted">${t("noNewApps")}</p>`}
+        ${rejectedThisWeek.length ? `<div class="module-list">${rejectedThisWeek.map((job) =>
+          weeklyJobRow(job, `${stageLabel(job.current_stage)} · ${statusLabel(job.status)}`)
+        ).join("")}</div>` : `<p class="weekly-empty">${t("noRejectedThisWeek")}</p>`}
       </section>
-      <section class="weekly-section">
-        <div class="weekly-section-header">
-          <h3>${t("recentTimeline")}</h3>
-          <span class="tag-count">${data.recent_timeline.length}</span>
-        </div>
-        ${data.recent_timeline.length ? `<div class="module-list">${data.recent_timeline.map((event) => `
-          <div class="module-item-row">
-            <div>
-              <strong>${escapeHtml(event.event_title)}</strong>
-              <span class="muted"> · ${escapeHtml(event.company_name)} - ${escapeHtml(event.position_name)}</span>
-            </div>
-            <span class="muted">${formatDate(event.event_time)}</span>
-          </div>
-        `).join("")}</div>` : `<p class="muted">${t("noRecentTimeline")}</p>`}
-      </section>
+
       <section class="weekly-section">
         <div class="weekly-section-header">
           <h3>${t("staleApps")}</h3>
-          <span class="tag-count">${data.stale_jobs.length}</span>
+          <span class="tag-count ${urgentStale.length > 0 ? "tag-count-warn" : ""}">${staleJobs.length}</span>
         </div>
-        ${data.stale_jobs.length ? `<div class="module-list">${data.stale_jobs.map((job) => `
+        ${staleJobs.length === 0
+          ? `<p class="weekly-empty">${t("noStaleApps")}</p>`
+          : `<div class="module-list">
+              ${urgentStale.length > 0 ? `
+                <div class="weekly-urgency-label">${t("followUpUrgent")}</div>
+                ${staleList(urgentStale)}` : ""}
+              ${normalStale.length > 0 ? `
+                ${urgentStale.length > 0 ? `<div class="weekly-urgency-label weekly-urgency-normal">其他</div>` : ""}
+                ${staleList(normalStale)}` : ""}
+             </div>`}
+      </section>
+
+      <section class="weekly-section">
+        <div class="weekly-section-header">
+          <h3>${t("recentTimeline")}</h3>
+          <span class="tag-count">${recentTimeline.length}</span>
+        </div>
+        ${recentTimeline.length ? `<div class="module-list">${recentTimeline.map((event) => `
           <div class="module-item-row">
             <div>
-              <strong>${escapeHtml(job.position_name)}</strong>
-              <span class="muted"> · ${escapeHtml(job.company_name)}</span>
+              <strong>${escapeHtml(event.event_title)}</strong>
+              <span class="muted"> · ${escapeHtml(event.company_name)} · ${escapeHtml(event.position_name)}</span>
             </div>
-            <span class="muted">${t("lastUpdated")}: ${formatDate(job.updated_at)}</span>
-          </div>
-        `).join("")}</div>` : `<p class="muted">${t("noStaleApps")}</p>`}
+            <span class="muted">${formatDate(event.event_time)}</span>
+          </div>`).join("")}</div>` : `<p class="weekly-empty">${t("noRecentTimeline")}</p>`}
       </section>
+
+      <section class="weekly-section">
+        <div class="weekly-section-header">
+          <h3>${t("newThisWeek")}</h3>
+          <span class="tag-count">${newJobs.length}</span>
+        </div>
+        ${newJobs.length ? `<div class="module-list">${newJobs.map((job) =>
+          weeklyJobRow(job, `${stageLabel(job.current_stage)} · ${formatDate(job.created_at)}`)
+        ).join("")}</div>` : `<p class="weekly-empty">${t("noNewApps")}</p>`}
+      </section>
+
+      <section class="weekly-section weekly-section-notes">
+        <div class="weekly-section-header">
+          <h3>${t("weeklyNotes")}</h3>
+        </div>
+        <textarea class="weekly-notes-input" id="weeklyNotesInput" rows="5"
+          placeholder="${escapeHtml(t("weeklyNotesPlaceholder"))}">${escapeHtml(savedNote)}</textarea>
+        <div class="weekly-notes-preview" id="weeklyNotesPreview" ${savedNote ? "" : "hidden"}>
+          <strong>${t("weeklyNotesPreview")}</strong>
+          <p>${escapeHtml(savedNote)}</p>
+        </div>
+        <div class="weekly-notes-actions">
+          <button class="primary" id="weeklyNotesSaveBtn">${t("weeklyNotesSave")}</button>
+          <span class="weekly-notes-status muted" id="weeklyNotesStatus"></span>
+        </div>
+      </section>
+
     </div>
   `;
+
+  document.querySelector("#weeklyNotesSaveBtn").addEventListener("click", async () => {
+    const text = document.querySelector("#weeklyNotesInput").value;
+    const statusEl = document.querySelector("#weeklyNotesStatus");
+    const previewEl = document.querySelector("#weeklyNotesPreview");
+    await api("/api/user-profile", {
+      method: "PATCH",
+      body: JSON.stringify({ [weekKey]: text }),
+    });
+    userProfile[weekKey] = text;
+    previewEl.hidden = !text.trim();
+    previewEl.querySelector("p").textContent = text;
+    statusEl.textContent = t("weeklyNotesSaved");
+    setTimeout(() => { statusEl.textContent = ""; }, 2000);
+  });
 }
 
 function addAnswerRow(container, label = "", content = "") {
@@ -1579,7 +1808,7 @@ function renderModuleToolbar(viewKey) {
       <input type="text" class="module-filter-input" id="moduleFilterInput" placeholder="${t("filterPlaceholder")}" value="${search}" />
       <div class="view-mode-toggle">
         <button class="vmtoggle-btn${mode === "card" ? " active" : ""}" data-mode="card">${t("cardView")}</button>
-        <button class="vmtoggle-btn${mode === "table" ? " active" : ""}" data-mode="table">${t("tableView")}</button>
+        <button class="vmtoggle-btn${mode === "list" ? " active" : ""}" data-mode="list">${t("listView")}</button>
       </div>
     </div>`;
 }
@@ -1599,7 +1828,7 @@ function attachModuleToolbarHandlers(viewKey, rerender) {
 
 async function renderQuestionBankView() {
   questionBankItems = await api("/api/question-bank");
-  renderQuestionBankContent();
+  if (activeView === "QUESTION_BANK" && activeEditor === null) renderQuestionBankContent();
 }
 
 function renderQuestionBankContent() {
@@ -1611,45 +1840,100 @@ function renderQuestionBankContent() {
   summary.textContent = t("questionCount", { count: items.length });
   const mode = moduleViewMode.QUESTION_BANK || "card";
   let content;
-  if (items.length === 0) {
-    content = `<p class="muted module-empty">${t("noQuestions")}</p>`;
-  } else if (mode === "table") {
-    content = `<table class="module-table">
-      <thead><tr><th>${t("questionTextLabel")}</th><th>${t("questionCategoryLabel")}</th><th>${t("tags")}</th><th>${t("answersLabel")}</th><th>${t("tableActions")}</th></tr></thead>
-      <tbody>${items.map((q) => `
-        <tr>
-          <td class="cell-truncate">${escapeHtml(q.question)}</td>
-          <td>${escapeHtml(q.category || "")}</td>
-          <td>${(q.tags || []).map((tg) => `<span class="tag-chip">${escapeHtml(tg)}</span>`).join(" ")}</td>
-          <td>${(q.answers || []).length}</td>
-          <td><div class="operation-stack"><button data-action="edit-question" data-id="${q.id}">${t("edit")}</button><button class="danger-button" data-action="delete-question" data-id="${q.id}">${t("delete")}</button></div></td>
-        </tr>`).join("")}
-      </tbody></table>`;
+  if (mode === "list") {
+    if (items.length === 0) {
+      content = `<div class="module-list-view">
+        <div class="module-list-item placeholder-list-item">
+          <span class="module-list-title">Why do you want to work here?</span>
+          <div class="tag-row"><span>motivation</span></div>
+          <span class="module-list-preview">Research the company's mission and values, then connect them to your own story.</span>
+        </div>
+        <div class="module-list-item placeholder-list-item">
+          <span class="module-list-title">What is your expected salary?</span>
+          <div class="tag-row"><span>HR</span><span>common</span></div>
+          <span class="module-list-preview">State a range based on market research. Stay flexible and mention you're open to discussion.</span>
+        </div>
+        <div class="module-list-item placeholder-list-item">
+          <span class="module-list-title">Do you require visa sponsorship?</span>
+          <div class="tag-row"><span>sponsorship</span></div>
+          <span class="module-list-preview">Be direct: Yes or No, then follow with your right to work status and timeline.</span>
+        </div>
+      </div>`;
+    } else {
+      content = `<div class="module-list-view">${items.map((q) => {
+        const firstAns = q.answers?.[0];
+        const preview = firstAns ? (typeof firstAns === "object" ? firstAns.content : firstAns) : "";
+        return `<div class="module-list-item" data-id="${q.id}">
+          <span class="module-list-title">${escapeHtml(q.question)}</span>
+          <div class="tag-row">${q.category && q.category !== "general" ? `<span>${escapeHtml(q.category)}</span>` : ""}${(q.tags || []).map((tg) => `<span>${escapeHtml(tg)}</span>`).join("")}</div>
+          <span class="module-list-preview">${escapeHtml(String(preview).slice(0, 120))}</span>
+          <div class="operation-stack"><button data-action="edit-question" data-id="${q.id}">${t("edit")}</button><button class="danger-button" data-action="delete-question" data-id="${q.id}">${t("delete")}</button></div>
+        </div>`;
+      }).join("")}</div>`;
+    }
   } else {
-    content = items.map((q) => `
-      <article class="module-item-card" data-id="${q.id}">
-        <div class="module-item-header">
-          <div class="module-item-body">
-            <h3>${escapeHtml(q.question)}</h3>
-            <div class="tag-row">
-              ${q.category && q.category !== "general" ? `<span>${escapeHtml(q.category)}</span>` : ""}
-              ${(q.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+    if (items.length === 0) {
+      content = `<div class="module-items-grid">
+        <article class="module-item-card placeholder-card">
+          <span class="placeholder-badge">示例 / Example</span>
+          <div class="module-item-header"><div class="module-item-body">
+            <h3>Why do you want to work here?</h3>
+            <div class="tag-row"><span>motivation</span></div>
+          </div></div>
+          <div class="answer-list"><div class="answer-item">
+            <p class="answer-label-tag">Formal</p>
+            <p>I'm drawn to [Company]'s mission to… which aligns with my experience in… and my long-term goal to…</p>
+          </div></div>
+        </article>
+        <article class="module-item-card placeholder-card">
+          <span class="placeholder-badge">示例 / Example</span>
+          <div class="module-item-header"><div class="module-item-body">
+            <h3>What is your expected salary?</h3>
+            <div class="tag-row"><span>HR</span><span>common</span></div>
+          </div></div>
+          <div class="answer-list"><div class="answer-item">
+            <p class="answer-label-tag">Standard</p>
+            <p>Based on my research and experience, I'm targeting £X–£Y. I'm open to discussion given the full package.</p>
+          </div></div>
+        </article>
+        <article class="module-item-card placeholder-card">
+          <span class="placeholder-badge">示例 / Example</span>
+          <div class="module-item-header"><div class="module-item-body">
+            <h3>Do you require visa sponsorship?</h3>
+            <div class="tag-row"><span>sponsorship</span></div>
+          </div></div>
+          <div class="answer-list"><div class="answer-item">
+            <p class="answer-label-tag">Direct</p>
+            <p>Yes, I currently require sponsorship. I hold a [visa type] valid until [date] and am eligible to start immediately.</p>
+          </div></div>
+        </article>
+      </div>`;
+    } else {
+      content = `<div class="module-items-grid">${items.map((q) => `
+        <article class="module-item-card" data-id="${q.id}">
+          <div class="module-item-header">
+            <div class="module-item-body">
+              <h3>${escapeHtml(q.question)}</h3>
+              <div class="tag-row">
+                ${q.category && q.category !== "general" ? `<span>${escapeHtml(q.category)}</span>` : ""}
+                ${(q.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+              </div>
+            </div>
+            <div class="operation-stack item-actions">
+              <button data-action="edit-question" data-id="${q.id}">${t("edit")}</button>
+              <button class="danger-button" data-action="delete-question" data-id="${q.id}">${t("delete")}</button>
             </div>
           </div>
-          <div class="operation-stack item-actions">
-            <button data-action="edit-question" data-id="${q.id}">${t("edit")}</button>
-            <button class="danger-button" data-action="delete-question" data-id="${q.id}">${t("delete")}</button>
-          </div>
-        </div>
-        ${(q.answers || []).length ? `
-          <div class="answer-list">
-            ${q.answers.map((ans) => `
-              <div class="answer-item">
-                ${(typeof ans === "object" && ans.label) ? `<p class="answer-label-tag">${escapeHtml(ans.label)}</p>` : ""}
-                <p>${escapeHtml(typeof ans === "string" ? ans : (ans.content || ""))}</p>
-              </div>`).join("")}
-          </div>` : `<p class="muted">${t("noAnswers")}</p>`}
-      </article>`).join("");
+          ${(q.answers || []).length ? `
+            <div class="answer-list">
+              ${q.answers.map((ans) => `
+                <div class="answer-item">
+                  ${(typeof ans === "object" && ans.label) ? `<p class="answer-label-tag">${escapeHtml(ans.label)}</p>` : ""}
+                  <p>${escapeHtml(typeof ans === "string" ? ans : (ans.content || ""))}</p>
+                </div>`).join("")}
+            </div>` : `<p class="muted">${t("noAnswers")}</p>`}
+        </article>`).join("")}</div>`;
+    }
   }
   moduleView.innerHTML = renderModuleToolbar("QUESTION_BANK") + content;
   attachModuleToolbarHandlers("QUESTION_BANK", renderQuestionBankContent);
@@ -1672,7 +1956,7 @@ function renderQuestionBankContent() {
 
 async function renderInterviewStoriesView() {
   interviewStoryItems = await api("/api/interview-stories");
-  renderInterviewStoriesContent();
+  if (activeView === "INTERVIEW_STORIES" && activeEditor === null) renderInterviewStoriesContent();
 }
 
 function renderInterviewStoriesContent() {
@@ -1684,42 +1968,101 @@ function renderInterviewStoriesContent() {
   summary.textContent = t("storyCount", { count: items.length });
   const mode = moduleViewMode.INTERVIEW_STORIES || "card";
   let content;
-  if (items.length === 0) {
-    content = `<p class="muted module-empty">${t("noStories")}</p>`;
-  } else if (mode === "table") {
-    content = `<table class="module-table">
-      <thead><tr><th>${t("storyTitleField")}</th><th>${t("tags")}</th><th>Situation</th><th>${t("tableActions")}</th></tr></thead>
-      <tbody>${items.map((s) => `
-        <tr>
-          <td>${escapeHtml(s.title)}</td>
-          <td>${(s.tags || []).map((tg) => `<span class="tag-chip">${escapeHtml(tg)}</span>`).join(" ")}</td>
-          <td class="cell-truncate">${escapeHtml((s.situation || "").slice(0, 80))}${(s.situation || "").length > 80 ? "…" : ""}</td>
-          <td><div class="operation-stack"><button data-action="edit-story" data-id="${s.id}">${t("edit")}</button><button class="danger-button" data-action="delete-story" data-id="${s.id}">${t("delete")}</button></div></td>
-        </tr>`).join("")}
-      </tbody></table>`;
+  if (mode === "list") {
+    if (items.length === 0) {
+      content = `<div class="module-list-view">
+        <div class="module-list-item placeholder-list-item">
+          <span class="module-list-title">Led team through critical data migration</span>
+          <div class="tag-row"><span>leadership</span><span>ownership</span></div>
+          <span class="module-list-preview">Team needed to migrate 3 years of legacy data before Q4 deadline with no downtime.</span>
+        </div>
+        <div class="module-list-item placeholder-list-item">
+          <span class="module-list-title">Handled a conflict between stakeholder priorities</span>
+          <div class="tag-row"><span>conflict</span><span>communication</span></div>
+          <span class="module-list-preview">Two senior stakeholders had conflicting requirements for the same Q3 dashboard release.</span>
+        </div>
+        <div class="module-list-item placeholder-list-item">
+          <span class="module-list-title">Delivered a project with incomplete requirements</span>
+          <div class="tag-row"><span>ambiguity</span><span>initiative</span></div>
+          <span class="module-list-preview">Joined mid-project with no documentation and a 2-week deadline.</span>
+        </div>
+      </div>`;
+    } else {
+      content = `<div class="module-list-view">${items.map((s) => `
+        <div class="module-list-item" data-id="${s.id}">
+          <span class="module-list-title">${escapeHtml(s.title)}</span>
+          <div class="tag-row">${(s.tags || []).map((tg) => `<span>${escapeHtml(tg)}</span>`).join("")}</div>
+          <span class="module-list-preview">${escapeHtml((s.situation || "").slice(0, 120))}</span>
+          <div class="operation-stack"><button data-action="edit-story" data-id="${s.id}">${t("edit")}</button><button class="danger-button" data-action="delete-story" data-id="${s.id}">${t("delete")}</button></div>
+        </div>`).join("")}</div>`;
+    }
   } else {
-    content = items.map((story) => `
-      <article class="module-item-card" data-id="${story.id}">
-        <div class="module-item-header">
-          <div class="module-item-body">
-            <h3>${escapeHtml(story.title)}</h3>
-            <div class="tag-row">
-              ${(story.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+    if (items.length === 0) {
+      content = `<div class="module-items-grid">
+        <article class="module-item-card placeholder-card">
+          <span class="placeholder-badge">示例 / Example</span>
+          <div class="module-item-header"><div class="module-item-body">
+            <h3>Led team through critical data migration</h3>
+            <div class="tag-row"><span>leadership</span><span>ownership</span></div>
+          </div></div>
+          <div class="star-grid">
+            <div class="star-field"><dt>S</dt><dd>Team needed to migrate 3 years of legacy data before Q4 deadline with no downtime.</dd></div>
+            <div class="star-field"><dt>T</dt><dd>Coordinate 4 engineers and ensure zero data loss.</dd></div>
+            <div class="star-field"><dt>A</dt><dd>Daily standups, migration checklist, automated validation tests.</dd></div>
+            <div class="star-field"><dt>R</dt><dd>Completed on time. Reduced future migration time by 40%.</dd></div>
+          </div>
+        </article>
+        <article class="module-item-card placeholder-card">
+          <span class="placeholder-badge">示例 / Example</span>
+          <div class="module-item-header"><div class="module-item-body">
+            <h3>Handled a conflict between stakeholder priorities</h3>
+            <div class="tag-row"><span>conflict</span><span>communication</span></div>
+          </div></div>
+          <div class="star-grid">
+            <div class="star-field"><dt>S</dt><dd>Two senior stakeholders had conflicting requirements for the same Q3 dashboard release.</dd></div>
+            <div class="star-field"><dt>T</dt><dd>Facilitate alignment without delaying the release timeline.</dd></div>
+            <div class="star-field"><dt>A</dt><dd>Organised a joint session, documented both needs, proposed phased delivery.</dd></div>
+            <div class="star-field"><dt>R</dt><dd>Both stakeholders agreed. Released on time with follow-up features in Q4.</dd></div>
+          </div>
+        </article>
+        <article class="module-item-card placeholder-card">
+          <span class="placeholder-badge">示例 / Example</span>
+          <div class="module-item-header"><div class="module-item-body">
+            <h3>Delivered a project with incomplete requirements</h3>
+            <div class="tag-row"><span>ambiguity</span><span>initiative</span></div>
+          </div></div>
+          <div class="star-grid">
+            <div class="star-field"><dt>S</dt><dd>Joined mid-project with no documentation and a 2-week deadline.</dd></div>
+            <div class="star-field"><dt>T</dt><dd>Reconstruct requirements and deliver a working prototype.</dd></div>
+            <div class="star-field"><dt>A</dt><dd>Interviewed 5 stakeholders, rebuilt spec, prioritised core features.</dd></div>
+            <div class="star-field"><dt>R</dt><dd>Prototype approved. Became the foundation for full product launch.</dd></div>
+          </div>
+        </article>
+      </div>`;
+    } else {
+      content = `<div class="module-items-grid">${items.map((story) => `
+        <article class="module-item-card" data-id="${story.id}">
+          <div class="module-item-header">
+            <div class="module-item-body">
+              <h3>${escapeHtml(story.title)}</h3>
+              <div class="tag-row">
+                ${(story.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+              </div>
+            </div>
+            <div class="operation-stack item-actions">
+              <button data-action="edit-story" data-id="${story.id}">${t("edit")}</button>
+              <button class="danger-button" data-action="delete-story" data-id="${story.id}">${t("delete")}</button>
             </div>
           </div>
-          <div class="operation-stack item-actions">
-            <button data-action="edit-story" data-id="${story.id}">${t("edit")}</button>
-            <button class="danger-button" data-action="delete-story" data-id="${story.id}">${t("delete")}</button>
+          <div class="star-grid">
+            ${story.situation ? `<div class="star-field"><dt>${t("storySituationLabel")}</dt><dd>${escapeHtml(story.situation)}</dd></div>` : ""}
+            ${story.task ? `<div class="star-field"><dt>${t("storyTaskLabel")}</dt><dd>${escapeHtml(story.task)}</dd></div>` : ""}
+            ${story.action ? `<div class="star-field"><dt>${t("storyActionLabel")}</dt><dd>${escapeHtml(story.action)}</dd></div>` : ""}
+            ${story.result ? `<div class="star-field"><dt>${t("storyResultLabel")}</dt><dd>${escapeHtml(story.result)}</dd></div>` : ""}
           </div>
-        </div>
-        <div class="star-grid">
-          ${story.situation ? `<div class="star-field"><dt>${t("storySituationLabel")}</dt><dd>${escapeHtml(story.situation)}</dd></div>` : ""}
-          ${story.task ? `<div class="star-field"><dt>${t("storyTaskLabel")}</dt><dd>${escapeHtml(story.task)}</dd></div>` : ""}
-          ${story.action ? `<div class="star-field"><dt>${t("storyActionLabel")}</dt><dd>${escapeHtml(story.action)}</dd></div>` : ""}
-          ${story.result ? `<div class="star-field"><dt>${t("storyResultLabel")}</dt><dd>${escapeHtml(story.result)}</dd></div>` : ""}
-        </div>
-        ${story.notes ? `<p class="story-notes muted">${escapeHtml(story.notes)}</p>` : ""}
-      </article>`).join("");
+          ${story.notes ? `<p class="story-notes muted">${escapeHtml(story.notes)}</p>` : ""}
+        </article>`).join("")}</div>`;
+    }
   }
   moduleView.innerHTML = renderModuleToolbar("INTERVIEW_STORIES") + content;
   attachModuleToolbarHandlers("INTERVIEW_STORIES", renderInterviewStoriesContent);
@@ -1742,7 +2085,7 @@ function renderInterviewStoriesContent() {
 
 async function renderCompanyNotesView() {
   companyNoteItems = await api("/api/company-notes");
-  renderCompanyNotesContent();
+  if (activeView === "COMPANY_NOTES" && activeEditor === null) renderCompanyNotesContent();
 }
 
 function renderCompanyNotesContent() {
@@ -1754,49 +2097,102 @@ function renderCompanyNotesContent() {
   summary.textContent = t("companyNoteCount", { count: items.length });
   const mode = moduleViewMode.COMPANY_NOTES || "card";
   let content;
-  if (items.length === 0) {
-    content = `<p class="muted module-empty">${t("noCompanyNotes")}</p>`;
-  } else if (mode === "table") {
-    content = `<table class="module-table">
-      <thead><tr><th>${t("company")}</th><th>${t("industryLabel")}</th><th>${t("tags")}</th><th>${t("linkedJobs")}</th><th>${t("tableActions")}</th></tr></thead>
-      <tbody>${items.map((note) => {
+  if (mode === "list") {
+    if (items.length === 0) {
+      content = `<div class="module-list-view">
+        <div class="module-list-item placeholder-list-item">
+          <span class="module-list-title">Google</span>
+          <div class="tag-row"><span>Tech</span><span>FAANG</span></div>
+          <span class="module-list-preview">Search, ads, and cloud. 180,000+ employees. Strong engineering culture. · 2 roles</span>
+        </div>
+        <div class="module-list-item placeholder-list-item">
+          <span class="module-list-title">Deloitte</span>
+          <div class="tag-row"><span>Consulting</span><span>Big 4</span></div>
+          <span class="module-list-preview">Global professional services firm. Structured career progression and client-facing work. · 1 role</span>
+        </div>
+        <div class="module-list-item placeholder-list-item">
+          <span class="module-list-title">Monzo</span>
+          <div class="tag-row"><span>Fintech</span><span>startup</span></div>
+          <span class="module-list-preview">UK digital bank, ~4M customers. Fast-moving product culture. · 2 roles</span>
+        </div>
+      </div>`;
+    } else {
+      content = `<div class="module-list-view">${items.map((note) => {
         const linked = allJobs.filter((j) => j.company_name.toLowerCase() === note.company_name.toLowerCase());
-        return `<tr>
-          <td>${escapeHtml(note.company_name)}</td>
-          <td>${escapeHtml(note.industry || "")}</td>
-          <td>${(note.tags || []).map((tg) => `<span class="tag-chip">${escapeHtml(tg)}</span>`).join(" ")}</td>
-          <td>${linked.length}</td>
-          <td><div class="operation-stack"><button data-action="edit-company" data-id="${note.id}">${t("edit")}</button><button class="danger-button" data-action="delete-company" data-id="${note.id}">${t("delete")}</button></div></td>
-        </tr>`;
-      }).join("")}
-      </tbody></table>`;
+        const preview = note.overview || note.why_interested || "";
+        return `<div class="module-list-item" data-id="${note.id}">
+          <span class="module-list-title">${escapeHtml(note.company_name)}</span>
+          <div class="tag-row">${note.industry ? `<span>${escapeHtml(note.industry)}</span>` : ""}${(note.tags || []).map((tg) => `<span>${escapeHtml(tg)}</span>`).join("")}</div>
+          <span class="module-list-preview">${escapeHtml(preview.slice(0, 120))}${linked.length ? ` · ${linked.length} role${linked.length > 1 ? "s" : ""}` : ""}</span>
+          <div class="operation-stack"><button data-action="edit-company" data-id="${note.id}">${t("edit")}</button><button class="danger-button" data-action="delete-company" data-id="${note.id}">${t("delete")}</button></div>
+        </div>`;
+      }).join("")}</div>`;
+    }
   } else {
-    content = items.map((note) => {
-      const linked = allJobs.filter((job) => job.company_name.toLowerCase() === note.company_name.toLowerCase());
-      return `
-        <article class="module-item-card" data-id="${note.id}">
-          <div class="module-item-header">
-            <div class="module-item-body">
-              <h3>${escapeHtml(note.company_name)}</h3>
-              <div class="tag-row">
-                ${note.industry ? `<span>${escapeHtml(note.industry)}</span>` : ""}
-                ${(note.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+    if (items.length === 0) {
+      content = `<div class="module-items-grid">
+        <article class="module-item-card placeholder-card">
+          <span class="placeholder-badge">示例 / Example</span>
+          <div class="module-item-header"><div class="module-item-body">
+            <h3>Google</h3>
+            <div class="tag-row"><span>Tech</span><span>large corp</span><span>FAANG</span></div>
+          </div></div>
+          <p>Search, ads, and cloud. 180,000+ employees. Strong engineering culture, rigorous hiring process.</p>
+          <div class="note-field"><dt>${t("whyInterestedLabel")}</dt><dd>Work on products used by billions. Strong mentorship culture and internal mobility.</dd></div>
+          <div class="note-field"><dt>${t("interviewFocusLabel")}</dt><dd>Coding + system design heavy. Behavioral rounds test leadership and ownership.</dd></div>
+          <div class="linked-jobs-row"><span class="muted">${t("linkedJobs")}:</span><span class="linked-job-tag">Data Analyst</span><span class="linked-job-tag">PM</span></div>
+        </article>
+        <article class="module-item-card placeholder-card">
+          <span class="placeholder-badge">示例 / Example</span>
+          <div class="module-item-header"><div class="module-item-body">
+            <h3>Deloitte</h3>
+            <div class="tag-row"><span>Consulting</span><span>Big 4</span></div>
+          </div></div>
+          <p>Global professional services firm. Known for structured career progression and client-facing work across industries.</p>
+          <div class="note-field"><dt>${t("whyInterestedLabel")}</dt><dd>Exposure to diverse industries early in career. Strong graduate programme with clear progression.</dd></div>
+          <div class="note-field"><dt>${t("interviewFocusLabel")}</dt><dd>Case interviews + competency-based questions. Focus on structured thinking and communication.</dd></div>
+          <div class="linked-jobs-row"><span class="muted">${t("linkedJobs")}:</span><span class="linked-job-tag">Business Analyst</span></div>
+        </article>
+        <article class="module-item-card placeholder-card">
+          <span class="placeholder-badge">示例 / Example</span>
+          <div class="module-item-header"><div class="module-item-body">
+            <h3>Monzo</h3>
+            <div class="tag-row"><span>Fintech</span><span>startup</span></div>
+          </div></div>
+          <p>UK digital bank, ~4M customers. Fast-moving product culture, strong focus on customer transparency.</p>
+          <div class="note-field"><dt>${t("whyInterestedLabel")}</dt><dd>Mission-driven product with real user impact. Flat structure means more ownership earlier.</dd></div>
+          <div class="note-field"><dt>${t("interviewFocusLabel")}</dt><dd>Values alignment is core. Expect questions on data-driven decisions and product intuition.</dd></div>
+          <div class="linked-jobs-row"><span class="muted">${t("linkedJobs")}:</span><span class="linked-job-tag">Data Analyst</span><span class="linked-job-tag">Risk Analyst</span></div>
+        </article>
+      </div>`;
+    } else {
+      content = `<div class="module-items-grid">${items.map((note) => {
+        const linked = allJobs.filter((job) => job.company_name.toLowerCase() === note.company_name.toLowerCase());
+        return `
+          <article class="module-item-card" data-id="${note.id}">
+            <div class="module-item-header">
+              <div class="module-item-body">
+                <h3>${escapeHtml(note.company_name)}</h3>
+                <div class="tag-row">
+                  ${note.industry ? `<span>${escapeHtml(note.industry)}</span>` : ""}
+                  ${(note.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+                </div>
+              </div>
+              <div class="operation-stack item-actions">
+                <button data-action="edit-company" data-id="${note.id}">${t("edit")}</button>
+                <button class="danger-button" data-action="delete-company" data-id="${note.id}">${t("delete")}</button>
               </div>
             </div>
-            <div class="operation-stack item-actions">
-              <button data-action="edit-company" data-id="${note.id}">${t("edit")}</button>
-              <button class="danger-button" data-action="delete-company" data-id="${note.id}">${t("delete")}</button>
+            ${note.overview ? `<p>${escapeHtml(note.overview)}</p>` : ""}
+            ${note.why_interested ? `<div class="note-field"><dt>${t("whyInterestedLabel")}</dt><dd>${escapeHtml(note.why_interested)}</dd></div>` : ""}
+            ${note.interview_focus ? `<div class="note-field"><dt>${t("interviewFocusLabel")}</dt><dd>${escapeHtml(note.interview_focus)}</dd></div>` : ""}
+            <div class="linked-jobs-row">
+              <span class="muted">${t("linkedJobs")}:</span>
+              ${linked.length ? linked.map((job) => `<span class="linked-job-tag">${escapeHtml(job.position_name)}</span>`).join("") : `<span class="muted">${t("noLinkedJobs")}</span>`}
             </div>
-          </div>
-          ${note.overview ? `<p>${escapeHtml(note.overview)}</p>` : ""}
-          ${note.why_interested ? `<div class="note-field"><dt>${t("whyInterestedLabel")}</dt><dd>${escapeHtml(note.why_interested)}</dd></div>` : ""}
-          ${note.interview_focus ? `<div class="note-field"><dt>${t("interviewFocusLabel")}</dt><dd>${escapeHtml(note.interview_focus)}</dd></div>` : ""}
-          <div class="linked-jobs-row">
-            <span class="muted">${t("linkedJobs")}:</span>
-            ${linked.length ? linked.map((job) => `<span class="linked-job-tag">${escapeHtml(job.position_name)}</span>`).join("") : `<span class="muted">${t("noLinkedJobs")}</span>`}
-          </div>
-        </article>`;
-    }).join("");
+          </article>`;
+      }).join("")}</div>`;
+    }
   }
   moduleView.innerHTML = renderModuleToolbar("COMPANY_NOTES") + content;
   attachModuleToolbarHandlers("COMPANY_NOTES", renderCompanyNotesContent);
@@ -1817,10 +2213,51 @@ function renderCompanyNotesContent() {
   });
 }
 
+const TECH_KEYWORDS = [
+  // Languages
+  "Python","JavaScript","TypeScript","Java","C++","C#","C","Go","Golang","Rust","Ruby","PHP","Swift","Kotlin","Scala","R","MATLAB","Perl","Bash","Shell","PowerShell","SQL","PL/SQL","T-SQL","Haskell","Elixir","Clojure","Dart","Lua","Julia",
+  // Web frontend
+  "React","Vue","Angular","Svelte","Next.js","Nuxt","HTML","CSS","SASS","SCSS","Tailwind","Bootstrap","jQuery","Redux","Zustand","Webpack","Vite","Rollup","Babel","GraphQL","REST","WebSocket","PWA",
+  // Web backend
+  "Node.js","Express","FastAPI","Django","Flask","Spring","Spring Boot","Rails","Laravel","ASP.NET",".NET","NestJS","Koa","Gin","Echo","Fiber","gRPC",
+  // Databases
+  "MySQL","PostgreSQL","SQLite","MongoDB","Redis","Elasticsearch","Cassandra","DynamoDB","Firestore","BigQuery","Snowflake","Redshift","Oracle","MariaDB","CockroachDB","Neo4j","InfluxDB","Kafka","RabbitMQ","Celery",
+  // Cloud & DevOps
+  "AWS","Azure","GCP","Docker","Kubernetes","Terraform","Ansible","Jenkins","GitHub Actions","CircleCI","GitLab CI","ArgoCD","Helm","Prometheus","Grafana","Datadog","Splunk","ECS","EKS","Lambda","EC2","S3","CloudFormation","Pulumi","Nginx","Apache",
+  // Data & ML
+  "Pandas","NumPy","Scikit-learn","TensorFlow","PyTorch","Keras","XGBoost","LightGBM","Spark","Hadoop","Airflow","dbt","Tableau","Power BI","Looker","Databricks","Jupyter","Matplotlib","Seaborn","Plotly","MLflow","Hugging Face","LangChain","OpenAI",
+  // Mobile
+  "React Native","Flutter","SwiftUI","Android","iOS","Expo","Cordova","Ionic",
+  // Tools & Practices
+  "Git","GitHub","GitLab","Bitbucket","Jira","Confluence","Figma","Postman","Swagger","OpenAPI","Agile","Scrum","Kanban","CI/CD","TDD","BDD","Microservices","Serverless","Event-driven","SOA","OAuth","JWT","SAML","Linux","Unix",
+];
+
+function extractTechFromJd(jdText) {
+  if (!jdText) return [];
+  const lower = jdText.toLowerCase();
+  return TECH_KEYWORDS.filter((kw) => {
+    const lk = kw.toLowerCase();
+    const idx = lower.indexOf(lk);
+    if (idx === -1) return false;
+    const before = idx > 0 ? lower[idx - 1] : " ";
+    const after = idx + lk.length < lower.length ? lower[idx + lk.length] : " ";
+    return !/[a-z0-9_-]/.test(before) && !/[a-z0-9_-]/.test(after);
+  });
+}
+
 async function openPrepDialog(job) {
   prepJob = job;
-  await renderPrepDialog();
+  document.querySelector("#prepDialogTitle").textContent = job.position_name;
+  document.querySelector("#prepDialogMeta").textContent = `${job.company_name} · ${stageLabel(job.current_stage)} · ${statusLabel(job.status)}`;
+  document.querySelector("#prepDialogEyebrow").textContent = t("prepLabel");
+  document.querySelector("#prepProgress").innerHTML = "";
+  document.querySelector("#prepContent").innerHTML = `<p class="prep-empty muted">加载中…</p>`;
   prepDialog.showModal();
+  try {
+    await renderPrepDialog();
+  } catch (err) {
+    document.querySelector("#prepContent").innerHTML = `<p class="prep-empty" style="color:var(--danger)">${escapeHtml(String(err))}</p>`;
+  }
 }
 
 async function renderPrepDialog() {
@@ -1874,8 +2311,51 @@ async function renderPrepDialog() {
           ${s.situation ? `<span class="prep-item-hint">${escapeHtml(s.situation.slice(0, 60))}${s.situation.length > 60 ? "…" : ""}</span>` : ""}
         </label>`).join("");
 
+  // Tech gap analysis
+  const jdText = prepJob.jd_content || "";
+  const mySkillsRaw = (userProfile.my_skills || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  let techGapHtml = "";
+  if (!jdText) {
+    techGapHtml = `<p class="prep-empty">${t("techGapNoJd")}</p>`;
+  } else {
+    const jdKeywords = extractTechFromJd(jdText);
+    if (jdKeywords.length === 0) {
+      techGapHtml = `<p class="prep-empty muted">JD 中未检测到常见技术关键词。</p>`;
+    } else {
+      const matched = jdKeywords.filter((kw) => mySkillsRaw.some((s) => s === kw.toLowerCase() || kw.toLowerCase().includes(s) || s.includes(kw.toLowerCase())));
+      const missing = jdKeywords.filter((kw) => !mySkillsRaw.some((s) => s === kw.toLowerCase() || kw.toLowerCase().includes(s) || s.includes(kw.toLowerCase())));
+      const matchPct = jdKeywords.length > 0 ? Math.round((matched.length / jdKeywords.length) * 100) : 0;
+      const noSkills = mySkillsRaw.length === 0;
+      techGapHtml = `
+        <div class="tech-gap-bar-row">
+          <span class="tech-gap-score">${noSkills ? "—" : `${matchPct}%`}</span>
+          <div class="prep-bar tech-gap-bar"><div class="prep-bar-fill" style="width:${noSkills ? 0 : matchPct}%"></div></div>
+          <span class="tech-gap-total">${jdKeywords.length} 个关键词</span>
+        </div>
+        ${noSkills ? `<p class="prep-empty muted">${t("techGapNoSkills")}</p>` : ""}
+        ${missing.length > 0 ? `
+          <div class="tech-gap-group">
+            <span class="tech-gap-label tech-gap-missing-label">${t("techGapMissing")} (${missing.length})</span>
+            <div class="tech-gap-chips">
+              ${missing.map((kw) => `<span class="tech-chip tech-chip-missing">${escapeHtml(kw)}</span>`).join("")}
+            </div>
+          </div>` : ""}
+        ${matched.length > 0 ? `
+          <div class="tech-gap-group">
+            <span class="tech-gap-label tech-gap-match-label">${t("techGapMatch")} (${matched.length})</span>
+            <div class="tech-gap-chips">
+              ${matched.map((kw) => `<span class="tech-chip tech-chip-match">${escapeHtml(kw)}</span>`).join("")}
+            </div>
+          </div>` : ""}`;
+    }
+  }
+
   document.querySelector("#prepContent").innerHTML = `
     <div class="prep-sections">
+      <div class="prep-section prep-section-tech">
+        <h4 class="prep-section-title">${t("techGapTitle")}</h4>
+        ${techGapHtml}
+      </div>
       <div class="prep-section">
         <h4 class="prep-section-title">${t("prepQuestionsSection")}</h4>
         ${qHtml}
@@ -2235,6 +2715,7 @@ async function loadJobs() {
   renderStatusControls();
   renderViewShell();
   if (activeView === "DASHBOARD") {
+    userProfile = await api("/api/user-profile");
     renderDashboardView();
   } else if (activeView === "SUMMARY") {
     renderSummaryView();
@@ -2299,6 +2780,7 @@ function openEditDialogForJob(job) {
   renderJobTypeSelect(editJobTypeSelect, job.job_type || "FULL_TIME");
   renderStageSelect(editStageSelect, job.current_stage || "APPLIED");
   renderSubStatusSelect(editSubStatusSelect, job.current_stage || "APPLIED", job.status);
+  syncApplicationFieldsForStage(job.current_stage || "APPLIED", editApplyTime, editSubStatusSelect);
   editCustomSubStatusField.hidden = true;
   editCustomSubStatusInput.required = false;
   editCustomSubStatusInput.value = "";
@@ -2385,16 +2867,12 @@ moduleNavButtons.forEach((button) => {
   });
 });
 
-document.querySelector("#sidebarCollapseBtn").addEventListener("click", () => {
+document.querySelector("#sidebarCollapseBtn")?.addEventListener("click", () => {
   const shell = document.querySelector(".app-shell");
   const collapsed = shell.classList.toggle("sidebar-collapsed");
   document.querySelector("#sidebarCollapseBtn").textContent = collapsed ? "›" : "‹";
 });
 editPersonalInfoBtn.addEventListener("click", openPersonalInfoDialog);
-profilesExitBtn.addEventListener("click", () => {
-  activeView = "DASHBOARD";
-  loadJobs();
-});
 searchInput.addEventListener("input", () => {
   clearTimeout(searchInput.searchTimer);
   searchInput.searchTimer = setTimeout(loadJobs, 180);
@@ -2402,6 +2880,7 @@ searchInput.addEventListener("input", () => {
 
 stageSelect.addEventListener("change", () => {
   renderSubStatusSelect(subStatusSelect, stageSelect.value);
+  syncApplicationFieldsForStage(stageSelect.value, jobForm.elements.apply_time, subStatusSelect);
   customSubStatusField.hidden = true;
   customSubStatusInput.required = false;
   customSubStatusInput.value = "";
@@ -2416,6 +2895,7 @@ subStatusSelect.addEventListener("change", () => {
 
 editStageSelect.addEventListener("change", () => {
   renderSubStatusSelect(editSubStatusSelect, editStageSelect.value);
+  syncApplicationFieldsForStage(editStageSelect.value, editApplyTime, editSubStatusSelect);
   editCustomSubStatusField.hidden = true;
   editCustomSubStatusInput.required = false;
   editCustomSubStatusInput.value = "";
@@ -2440,8 +2920,9 @@ jobForm.addEventListener("submit", async (event) => {
     payload.status = (payload.custom_status || "").trim();
   }
   delete payload.custom_status;
-  payload.current_stage = payload.current_stage || "APPLIED";
-  payload.status = payload.status || "APPLIED_SUCCESS";
+  payload.current_stage = payload.current_stage || "SAVED";
+  payload.status = payload.current_stage === "SAVED" ? "SAVED" : (payload.status || "APPLIED_SUCCESS");
+  if (payload.current_stage === "SAVED") payload.apply_time = "";
   payload.job_type = payload.job_type || "FULL_TIME";
   await api("/api/jobs", {
     method: "POST",
@@ -2449,8 +2930,8 @@ jobForm.addEventListener("submit", async (event) => {
   });
   jobForm.reset();
   renderJobTypeSelect(jobTypeSelect, "FULL_TIME");
-  renderStageSelect(stageSelect, "APPLIED");
-  renderSubStatusSelect(subStatusSelect, "APPLIED", "APPLIED_SUCCESS");
+  renderStageSelect(stageSelect, "SAVED");
+  renderSubStatusSelect(subStatusSelect, "SAVED", "SAVED");
   customSubStatusField.hidden = true;
   customSubStatusInput.required = false;
   jobDialog.close();
@@ -2480,7 +2961,8 @@ editForm.addEventListener("submit", async (event) => {
   }
   delete payload.custom_status;
   payload.current_stage = payload.current_stage || "APPLIED";
-  payload.status = payload.status || "APPLIED_SUCCESS";
+  payload.status = payload.current_stage === "SAVED" ? "SAVED" : (payload.status || "APPLIED_SUCCESS");
+  if (payload.current_stage === "SAVED") payload.apply_time = "";
   payload.job_type = payload.job_type || "FULL_TIME";
 
   await api(`/api/jobs/${jobId}`, {

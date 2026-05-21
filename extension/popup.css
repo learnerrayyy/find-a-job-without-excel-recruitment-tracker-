@@ -50,6 +50,21 @@ header {
   padding: 14px;
 }
 
+.header-actions {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+#openDashboardBtn {
+  min-height: 32px;
+  border-color: #33272a;
+  background: var(--accent-soft);
+  color: #33272a;
+  font-size: 12px;
+  box-shadow: 2px 2px 0 #33272a;
+}
+
 h1,
 p {
   margin: 0;
