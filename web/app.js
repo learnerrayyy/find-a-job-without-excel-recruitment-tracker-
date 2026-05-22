@@ -129,6 +129,8 @@ const I18N = {
     navReview: "复盘",
     navPrepare: "准备",
     navAutomation: "自动化",
+    navFilters: "筛选",
+    prepareSummary: "把申请题、面试故事、公司笔记和简历档案集中在这里准备。",
     dashboard: "主控台",
     dashboardSummary: "先看总览，再进入左侧详细页面处理具体任务。",
     dashboardActive: "仍在流程",
@@ -139,6 +141,21 @@ const I18N = {
     noRecentApplications: "暂无最近岗位",
     latestWeeklyNote: "最近复盘",
     noWeeklyNote: "还没有保存复盘，先写一条本周总结。",
+    reviewCalendar: "复盘日历",
+    previousMonth: "上个月",
+    nextMonth: "下个月",
+    calendarSelectedDate: "选中日期",
+    dailyReviewPlaceholder: "写下这一天的投递复盘、面试体感、需要跟进的事。",
+    dailyReviewSaved: "已保存到主控台",
+    saveDailyReview: "保存当天复盘",
+    noDailyReview: "这一天还没有复盘。",
+    dayActivity: "当日记录",
+    jobsRecorded: "当天新增 / 收藏",
+    jobsApplied: "当天投递",
+    timelineActivity: "当天进展",
+    weeklyReflection: "本周复盘",
+    dailyReflection: "当天复盘",
+    noDayActivity: "这一天还没有岗位或时间线记录。",
     quickActions: "下一步",
     goApplications: "查看岗位明细",
     goWeekly: "打开每周复盘",
@@ -146,7 +163,10 @@ const I18N = {
     goStories: "整理面试故事",
     goCompanies: "整理公司笔记",
     applications: "岗位追踪",
-    summarize: "流程总结",
+    prepare: "准备材料",
+    summarize: "漏斗分析",
+    summaryIntroTitle: "这页看什么",
+    summaryIntroBody: "这里不是写复盘的地方，而是看投递漏斗：已投递岗位里有多少进入笔试、面试、被拒，以及哪些子状态占比最高。收藏岗位不会计入漏斗。",
     weeklyReview: "每周复盘",
     questionBank: "申请题答案库",
     interviewStories: "面试故事库",
@@ -259,11 +279,11 @@ const I18N = {
     recentTimeline: "本周进展",
     staleApps: "需要跟进",
     rejectedThisWeek: "本周被拒",
-    weeklyNotes: "本周复盘笔记",
+    weeklyNotes: "本周总结 / 下周计划",
     weeklyNotesPreview: "已保存的复盘",
     weeklyNotesSave: "保存笔记",
     weeklyNotesSaved: "已保存",
-    weeklyNotesPlaceholder: "这周有哪些收获？哪里没做好？下周的重点是什么？",
+    weeklyNotesPlaceholder: "这周整体发生了什么？哪些策略有效？下周最重要的 1-3 个动作是什么？",
     noNewApps: "本周没有新增岗位",
     noRecentTimeline: "本周没有进展动态",
     noStaleApps: "没有需要跟进的岗位",
@@ -362,6 +382,8 @@ const I18N = {
     navReview: "Review",
     navPrepare: "Prepare",
     navAutomation: "Automation",
+    navFilters: "Filters",
+    prepareSummary: "Prepare question answers, interview stories, company notes, and resume profiles in one place.",
     dashboard: "Main Dashboard",
     dashboardSummary: "Start with the overview, then use the left index for detailed work.",
     dashboardActive: "Still active",
@@ -372,6 +394,21 @@ const I18N = {
     noRecentApplications: "No recent applications yet",
     latestWeeklyNote: "Latest reflection",
     noWeeklyNote: "No saved reflection yet. Start with this week's note.",
+    reviewCalendar: "Reflection calendar",
+    previousMonth: "Previous month",
+    nextMonth: "Next month",
+    calendarSelectedDate: "Selected date",
+    dailyReviewPlaceholder: "Write the day's application reflection, interview notes, or follow-ups.",
+    dailyReviewSaved: "Saved to dashboard",
+    saveDailyReview: "Save daily reflection",
+    noDailyReview: "No reflection for this day yet.",
+    dayActivity: "Daily activity",
+    jobsRecorded: "Recorded / saved",
+    jobsApplied: "Applied",
+    timelineActivity: "Timeline",
+    weeklyReflection: "Weekly reflection",
+    dailyReflection: "Daily reflection",
+    noDayActivity: "No jobs or timeline activity for this day.",
     quickActions: "Next steps",
     goApplications: "Review applications",
     goWeekly: "Open weekly review",
@@ -379,7 +416,10 @@ const I18N = {
     goStories: "Build story library",
     goCompanies: "Research companies",
     applications: "Applications",
-    summarize: "Summary",
+    prepare: "Prepare",
+    summarize: "Funnel Analysis",
+    summaryIntroTitle: "What this page is for",
+    summaryIntroBody: "This is not a reflection page. It shows your application funnel: how submitted roles move into assessments, interviews, rejections, and which sub-statuses dominate. Saved roles are excluded.",
     weeklyReview: "Weekly Review",
     questionBank: "Question Bank",
     interviewStories: "Interview Stories",
@@ -492,11 +532,11 @@ const I18N = {
     recentTimeline: "Progress this week",
     staleApps: "Follow up needed",
     rejectedThisWeek: "Rejected this week",
-    weeklyNotes: "Weekly reflection",
+    weeklyNotes: "Weekly summary / next plan",
     weeklyNotesPreview: "Saved reflection",
     weeklyNotesSave: "Save note",
     weeklyNotesSaved: "Saved",
-    weeklyNotesPlaceholder: "What went well? What to improve? Focus for next week?",
+    weeklyNotesPlaceholder: "What happened this week? Which strategy worked? What are the top 1-3 actions for next week?",
     noNewApps: "No new applications this week",
     noRecentTimeline: "No activity logged this week",
     noStaleApps: "Nothing needs following up",
@@ -756,6 +796,9 @@ let moduleViewMode = {}; // { QUESTION_BANK: "card"|"table", ... }
 let moduleSearchText = {}; // { QUESTION_BANK: "", ... }
 let activeStatus = "ALL";
 let activeView = "DASHBOARD";
+let activePrepareView = "QUESTION_BANK";
+let dashboardCalendarDate = new Date();
+let dashboardSelectedReviewDate = new Date();
 let currentLang = localStorage.getItem("jobTrackerLanguage") || "zh";
 if (!I18N[currentLang]) currentLang = "zh";
 
@@ -770,6 +813,8 @@ const refreshBtn = document.querySelector("#refreshBtn");
 const newJobBtn = document.querySelector("#newJobBtn");
 const languageToggle = document.querySelector("#languageToggle");
 const dashboardNavButton = document.querySelector("#dashboardNavButton");
+const applicationsNavButton = document.querySelector("#applicationsNavButton");
+const prepareNavButton = document.querySelector("#prepareNavButton");
 const dashboardView = document.querySelector("#dashboardView");
 const applicationsView = document.querySelector("#applicationsView");
 const summaryView = document.querySelector("#summaryView");
@@ -920,8 +965,10 @@ function setFieldLabel(formSelector, fieldName, value) {
 function updateStaticText() {
   document.documentElement.lang = currentLang === "zh" ? "zh-Hans" : "en";
   dashboardNavButton.textContent = t("dashboard");
+  applicationsNavButton.textContent = t("applications");
+  prepareNavButton.textContent = t("prepare");
   const navLabels = document.querySelectorAll(".nav-section summary span");
-  [t("navTrack"), t("navReview"), t("navPrepare"), t("navAutomation")].forEach((label, index) => {
+  [t("navFilters")].forEach((label, index) => {
     if (navLabels[index]) navLabels[index].textContent = label;
   });
   summaryNavButton.textContent = t("summarize");
@@ -938,7 +985,7 @@ function updateStaticText() {
   moduleNavButtons.forEach((button) => {
     button.textContent = moduleButtonLabels[button.dataset.moduleView] || button.textContent;
   });
-  profilesNavButton.textContent = t("resumeProfiles");
+  if (profilesNavButton) profilesNavButton.textContent = t("resumeProfiles");
   languageToggle.textContent = t("languageToggle");
   searchInput.placeholder = t("searchPlaceholder");
   refreshBtn.textContent = t("refresh");
@@ -1231,19 +1278,11 @@ function renderJobs() {
       if (!job) return;
       const nextStage = select.value;
       const nextStatus = nextStage === "SAVED" ? "SAVED" : (SUBSTATUS_BY_STAGE[nextStage] || [])[0] || job.status;
-      await api(`/api/jobs/${job.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          current_stage: nextStage,
-          status: nextStatus,
-          apply_time: nextStage === "SAVED" ? "" : job.apply_time,
-        }),
+      await patchJobFromInline(job, {
+        current_stage: nextStage,
+        status: nextStatus,
+        apply_time: nextStage === "SAVED" ? "" : job.apply_time,
       });
-      if (timelineJob && timelineJob.id === job.id) {
-        timelineJob = { ...timelineJob, current_stage: nextStage, status: nextStatus };
-        await renderTimelineDialog(timelineJob);
-      }
-      await loadJobs();
     });
   });
 
@@ -1251,11 +1290,7 @@ function renderJobs() {
     select.addEventListener("change", async () => {
       const job = jobs.find((item) => String(item.id) === select.dataset.id);
       if (!job) return;
-      await api(`/api/jobs/${job.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ job_type: select.value }),
-      });
-      await loadJobs();
+      await patchJobFromInline(job, { job_type: select.value });
     });
   });
 
@@ -1272,15 +1307,7 @@ function renderJobs() {
         }
         nextStatus = nextStatus.trim();
       }
-      await api(`/api/jobs/${job.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: nextStatus }),
-      });
-      if (timelineJob && timelineJob.id === job.id) {
-        timelineJob = { ...timelineJob, status: nextStatus };
-        await renderTimelineDialog(timelineJob);
-      }
-      await loadJobs();
+      await patchJobFromInline(job, { status: nextStatus });
     });
   });
 
@@ -1326,22 +1353,38 @@ function renderJobs() {
   });
 }
 
+async function patchJobFromInline(job, payload) {
+  const updated = await api(`/api/jobs/${job.id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+  jobs = jobs.map((item) => (item.id === updated.id ? { ...item, ...updated } : item));
+  allJobs = allJobs.map((item) => (item.id === updated.id ? { ...item, ...updated } : item));
+  if (timelineJob && timelineJob.id === updated.id) {
+    timelineJob = { ...timelineJob, ...updated };
+    await renderTimelineDialog(timelineJob);
+  }
+  renderJobs();
+}
+
 function renderViewShell() {
   const isDashboard = activeView === "DASHBOARD";
   const isSummary = activeView === "SUMMARY";
   const isProfiles = activeView === "PROFILES";
-  const isModule = Boolean(MODULE_VIEWS[activeView]);
+  const isPrepare = activeView === "PREPARE";
+  const isModule = Boolean(MODULE_VIEWS[activeView]) || isPrepare;
   dashboardView.hidden = !isDashboard;
   applicationsView.hidden = isDashboard || isSummary || isProfiles || isModule;
   summaryView.hidden = !isSummary;
-  profilesView.hidden = !isProfiles;
-  moduleView.hidden = !isModule;
-  const moduleHasAdd = ["QUESTION_BANK", "INTERVIEW_STORIES", "COMPANY_NOTES"].includes(activeView);
+  profilesView.hidden = !(isProfiles || (isPrepare && activePrepareView === "PROFILES"));
+  moduleView.hidden = !isModule || (isPrepare && activePrepareView === "PROFILES");
+  const addContext = isPrepare ? activePrepareView : activeView;
+  const moduleHasAdd = ["QUESTION_BANK", "INTERVIEW_STORIES", "COMPANY_NOTES"].includes(addContext);
   newJobBtn.hidden = isSummary || (isModule && !moduleHasAdd) || activeEditor !== null;
-  if (isProfiles) newJobBtn.textContent = t("newProfile");
-  else if (activeView === "QUESTION_BANK") newJobBtn.textContent = t("addQuestion");
-  else if (activeView === "INTERVIEW_STORIES") newJobBtn.textContent = t("addStory");
-  else if (activeView === "COMPANY_NOTES") newJobBtn.textContent = t("addCompanyNote");
+  if (isProfiles || (isPrepare && activePrepareView === "PROFILES")) newJobBtn.textContent = t("newProfile");
+  else if (addContext === "QUESTION_BANK") newJobBtn.textContent = t("addQuestion");
+  else if (addContext === "INTERVIEW_STORIES") newJobBtn.textContent = t("addStory");
+  else if (addContext === "COMPANY_NOTES") newJobBtn.textContent = t("addCompanyNote");
   else newJobBtn.textContent = t("newJob");
   mainTitle.textContent = isDashboard
     ? t("dashboard")
@@ -1349,6 +1392,8 @@ function renderViewShell() {
     ? t("summarize")
     : isProfiles
       ? t("resumeProfiles")
+      : isPrepare
+        ? t("prepare")
       : isModule
         ? t(MODULE_TITLE_KEYS[activeView])
         : t("applications");
@@ -1358,8 +1403,10 @@ function renderViewShell() {
     if (mod) summary.textContent = mod.summary;
   }
   dashboardNavButton.classList.toggle("active", isDashboard);
+  applicationsNavButton.classList.toggle("active", activeView === "APPLICATIONS");
+  prepareNavButton.classList.toggle("active", isPrepare);
   summaryNavButton.classList.toggle("active", isSummary);
-  profilesNavButton.classList.toggle("active", isProfiles);
+  profilesNavButton?.classList.toggle("active", isProfiles);
   moduleNavButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.moduleView === activeView);
   });
@@ -1528,6 +1575,11 @@ function renderSummaryView() {
 
   summaryView.innerHTML = `
     <div class="summary-panel">
+      <div class="summary-intro">
+        <h3>${t("summaryIntroTitle")}</h3>
+        <p>${t("summaryIntroBody")}</p>
+      </div>
+
       ${renderSankey(stats)}
 
       <div class="summary-metrics-grid">
@@ -1555,11 +1607,158 @@ function renderSummaryView() {
   `;
 }
 
-function renderDashboardView() {
+function dateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function reviewNoteKey(date) {
+  return `review_note_${dateKey(date)}`;
+}
+
+function monthTitle(date) {
+  return date.toLocaleDateString(currentLang === "zh" ? "zh-CN" : "en-GB", {
+    year: "numeric",
+    month: "long",
+  });
+}
+
+function dayTitle(date) {
+  return date.toLocaleDateString(currentLang === "zh" ? "zh-CN" : "en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    weekday: "short",
+  });
+}
+
+function hasDailyReviewNoteForDate(date) {
+  return Boolean(String(userProfile[reviewNoteKey(date)] || "").trim());
+}
+
+function dailyActivityRows(items, meta) {
+  return items.map((item) => `
+    <div class="calendar-activity-row">
+      <div>
+        <strong>${escapeHtml(item.position_name || item.event_title)}</strong>
+        <span class="muted"> · ${escapeHtml(item.company_name || "")}</span>
+      </div>
+      <span class="muted">${escapeHtml(meta(item))}</span>
+    </div>
+  `).join("");
+}
+
+function dailyActivitySection(title, items, meta) {
+  if (!items.length) return "";
+  return `
+    <div class="calendar-activity-section">
+      <h4>${title}</h4>
+      <div class="calendar-activity-list">
+        ${dailyActivityRows(items, meta)}
+      </div>
+    </div>
+  `;
+}
+
+function renderReviewCalendar(dayData) {
+  const todayKey = dateKey(new Date());
+  const selectedKey = dateKey(dashboardSelectedReviewDate);
+  const selectedDailyNote = userProfile[reviewNoteKey(dashboardSelectedReviewDate)] || "";
+  const selectedWeeklyNote = userProfile[isoWeekKey(dashboardSelectedReviewDate)] || "";
+  const month = new Date(dashboardCalendarDate.getFullYear(), dashboardCalendarDate.getMonth(), 1);
+  const firstDay = month.getDay();
+  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const weekdayLabels = currentLang === "zh"
+    ? ["日", "一", "二", "三", "四", "五", "六"]
+    : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const cells = [];
+
+  for (let i = 0; i < firstDay; i += 1) cells.push(`<span class="calendar-day is-empty"></span>`);
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const cellDate = new Date(month.getFullYear(), month.getMonth(), day);
+    const key = dateKey(cellDate);
+    const classes = [
+      "calendar-day",
+      key === todayKey ? "is-today" : "",
+      key === selectedKey ? "is-selected" : "",
+      hasDailyReviewNoteForDate(cellDate) ? "has-note" : "",
+      String(userProfile[isoWeekKey(cellDate)] || "").trim() ? "has-week-note" : "",
+    ].filter(Boolean).join(" ");
+    cells.push(`
+      <button type="button" class="${classes}" data-review-date="${key}" aria-label="${dayTitle(cellDate)}">
+        <span>${day}</span>
+      </button>
+    `);
+  }
+
+  const recordedJobs = dayData?.recorded_jobs || [];
+  const appliedJobs = dayData?.applied_jobs || [];
+  const timelineEvents = dayData?.timeline_events || [];
+  const hasActivity = recordedJobs.length || appliedJobs.length || timelineEvents.length;
+  return `
+    <article class="dashboard-card dashboard-calendar-card">
+      <div class="calendar-card-header">
+        <h3>${t("reviewCalendar")}</h3>
+        <div class="calendar-controls">
+          <button type="button" class="icon-btn" data-calendar-shift="-1" aria-label="${t("previousMonth")}">‹</button>
+          <strong>${monthTitle(month)}</strong>
+          <button type="button" class="icon-btn" data-calendar-shift="1" aria-label="${t("nextMonth")}">›</button>
+        </div>
+      </div>
+      <div class="calendar-layout">
+        <div class="calendar-mini">
+          <div class="calendar-grid calendar-weekdays">
+            ${weekdayLabels.map((label) => `<span>${label}</span>`).join("")}
+          </div>
+          <div class="calendar-grid">
+            ${cells.join("")}
+          </div>
+        </div>
+        <div class="calendar-day-panel">
+          <div class="calendar-day-panel-header">
+            <span class="muted">${t("calendarSelectedDate")}</span>
+            <strong>${dayTitle(dashboardSelectedReviewDate)}</strong>
+          </div>
+          <div class="calendar-activity-section">
+            <h4>${t("dayActivity")}</h4>
+            ${hasActivity ? "" : `<p class="muted">${t("noDayActivity")}</p>`}
+          </div>
+          ${dailyActivitySection(t("jobsRecorded"), recordedJobs, (job) => `${stageLabel(job.current_stage)} · ${statusLabel(job.status)}`)}
+          ${dailyActivitySection(t("jobsApplied"), appliedJobs, (job) => `${stageLabel(job.current_stage)} · ${statusLabel(job.status)}`)}
+          ${dailyActivitySection(t("timelineActivity"), timelineEvents, (event) => `${event.position_name} · ${formatDate(event.event_time)}`)}
+          <div class="calendar-note-editor">
+            <h4>${t("dailyReflection")}</h4>
+            <textarea id="dashboardReviewNote" rows="4" placeholder="${escapeHtml(t("dailyReviewPlaceholder"))}">${escapeHtml(selectedDailyNote)}</textarea>
+            <div class="calendar-note-actions">
+              <button type="button" class="primary" id="dashboardReviewSave">${t("saveDailyReview")}</button>
+              <span class="muted" id="dashboardReviewStatus">${selectedDailyNote ? "" : t("noDailyReview")}</span>
+            </div>
+          </div>
+          <div class="calendar-week-note">
+            <h4>${t("weeklyReflection")}</h4>
+            ${selectedWeeklyNote
+              ? `<button type="button" class="dashboard-note-preview" data-dashboard-go="WEEKLY_REVIEW">${escapeHtml(selectedWeeklyNote)}</button>`
+              : `<button type="button" class="dashboard-note-preview dashboard-note-empty" data-dashboard-go="WEEKLY_REVIEW">${t("noWeeklyNote")}</button>`}
+          </div>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+async function renderDashboardView() {
   const stats = buildSummaryStats();
   const rejectedTotal = stats.appliedRejected + stats.assessmentRejected + stats.interviewRejected;
   const recentJobs = allJobs.slice(0, 5);
   const weeklyNote = latestWeeklyNote();
+  let dayData = { recorded_jobs: [], applied_jobs: [], timeline_events: [] };
+  try {
+    dayData = await api(`/api/calendar-day?date=${dateKey(dashboardSelectedReviewDate)}`);
+  } catch (err) {
+    dayData = { recorded_jobs: [], applied_jobs: [], timeline_events: [] };
+  }
   summary.textContent = t("dashboardSummary");
   dashboardView.innerHTML = `
     <section class="dashboard-grid">
@@ -1605,7 +1804,7 @@ function renderDashboardView() {
         <div class="dashboard-list">
           <button type="button" data-dashboard-go="APPLICATIONS">${t("goApplications")}</button>
           <button type="button" data-dashboard-go="SUMMARY">${t("summarize")}</button>
-          <button type="button" data-dashboard-go="PROFILES">${t("resumeProfiles")}</button>
+          <button type="button" data-dashboard-go="PREPARE">${t("prepare")}</button>
         </div>
       </article>
 
@@ -1615,6 +1814,8 @@ function renderDashboardView() {
           ? `<button type="button" class="dashboard-note-preview" data-dashboard-go="WEEKLY_REVIEW">${escapeHtml(weeklyNote)}</button>`
           : `<button type="button" class="dashboard-note-preview dashboard-note-empty" data-dashboard-go="WEEKLY_REVIEW">${t("noWeeklyNote")}</button>`}
       </article>
+
+      ${renderReviewCalendar(dayData)}
     </section>
   `;
   dashboardView.querySelectorAll("[data-dashboard-go]").forEach((button) => {
@@ -1632,10 +1833,41 @@ function renderDashboardView() {
       timelineDialog.showModal();
     });
   });
+  dashboardView.querySelectorAll("[data-calendar-shift]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      dashboardCalendarDate = new Date(
+        dashboardCalendarDate.getFullYear(),
+        dashboardCalendarDate.getMonth() + Number(button.dataset.calendarShift),
+        1
+      );
+      await renderDashboardView();
+    });
+  });
+  dashboardView.querySelectorAll("[data-review-date]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const [year, month, day] = button.dataset.reviewDate.split("-").map(Number);
+      dashboardSelectedReviewDate = new Date(year, month - 1, day);
+      dashboardCalendarDate = new Date(year, month - 1, 1);
+      await renderDashboardView();
+    });
+  });
+  dashboardView.querySelector("#dashboardReviewSave")?.addEventListener("click", async () => {
+    const textarea = dashboardView.querySelector("#dashboardReviewNote");
+    const text = textarea?.value || "";
+    const key = reviewNoteKey(dashboardSelectedReviewDate);
+    await api("/api/user-profile", {
+      method: "PATCH",
+      body: JSON.stringify({ [key]: text }),
+    });
+    userProfile[key] = text;
+    await renderDashboardView();
+    const nextStatusEl = dashboardView.querySelector("#dashboardReviewStatus");
+    if (nextStatusEl) nextStatusEl.textContent = t("dailyReviewSaved");
+  });
 }
 
-function isoWeekKey() {
-  const now = new Date();
+function isoWeekKey(date = new Date()) {
+  const now = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const jan4 = new Date(now.getFullYear(), 0, 4);
   const startOfWeek1 = new Date(jan4);
   startOfWeek1.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
@@ -1813,6 +2045,62 @@ function renderModuleToolbar(viewKey) {
     </div>`;
 }
 
+function renderPrepareTabs() {
+  const tabs = [
+    ["QUESTION_BANK", t("questionBank")],
+    ["INTERVIEW_STORIES", t("interviewStories")],
+    ["COMPANY_NOTES", t("companyNotes")],
+    ["PROFILES", t("resumeProfiles")],
+  ];
+  return `
+    <div class="prepare-tabs">
+      ${tabs.map(([key, label]) => `
+        <button type="button" class="${activePrepareView === key ? "active" : ""}" data-prepare-tab="${key}">
+          ${label}
+        </button>
+      `).join("")}
+    </div>
+  `;
+}
+
+function attachPrepareTabHandlers() {
+  document.querySelectorAll("[data-prepare-tab]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      activePrepareView = button.dataset.prepareTab;
+      activeEditor = null;
+      await loadJobs();
+    });
+  });
+}
+
+async function renderPrepareView() {
+  summary.textContent = t("prepareSummary");
+  renderViewShell();
+  if (activePrepareView === "PROFILES") {
+    await loadProfiles();
+    profilesView.querySelector(".prepare-tabs")?.remove();
+    profilesView.insertAdjacentHTML("afterbegin", renderPrepareTabs());
+    attachPrepareTabHandlers();
+    return;
+  }
+  if (activeEditor !== null) {
+    renderNoteEditor();
+    return;
+  }
+  if (activePrepareView === "QUESTION_BANK") {
+    renderQuestionBankContent();
+    await renderQuestionBankView();
+  } else if (activePrepareView === "INTERVIEW_STORIES") {
+    renderInterviewStoriesContent();
+    await renderInterviewStoriesView();
+  } else if (activePrepareView === "COMPANY_NOTES") {
+    renderCompanyNotesContent();
+    await renderCompanyNotesView();
+  }
+  moduleView.insertAdjacentHTML("afterbegin", renderPrepareTabs());
+  attachPrepareTabHandlers();
+}
+
 function attachModuleToolbarHandlers(viewKey, rerender) {
   document.querySelector("#moduleFilterInput")?.addEventListener("input", (e) => {
     moduleSearchText[viewKey] = e.target.value;
@@ -1828,7 +2116,7 @@ function attachModuleToolbarHandlers(viewKey, rerender) {
 
 async function renderQuestionBankView() {
   questionBankItems = await api("/api/question-bank");
-  if (activeView === "QUESTION_BANK" && activeEditor === null) renderQuestionBankContent();
+  if ((activeView === "QUESTION_BANK" || (activeView === "PREPARE" && activePrepareView === "QUESTION_BANK")) && activeEditor === null) renderQuestionBankContent();
 }
 
 function renderQuestionBankContent() {
@@ -1956,7 +2244,7 @@ function renderQuestionBankContent() {
 
 async function renderInterviewStoriesView() {
   interviewStoryItems = await api("/api/interview-stories");
-  if (activeView === "INTERVIEW_STORIES" && activeEditor === null) renderInterviewStoriesContent();
+  if ((activeView === "INTERVIEW_STORIES" || (activeView === "PREPARE" && activePrepareView === "INTERVIEW_STORIES")) && activeEditor === null) renderInterviewStoriesContent();
 }
 
 function renderInterviewStoriesContent() {
@@ -2085,7 +2373,7 @@ function renderInterviewStoriesContent() {
 
 async function renderCompanyNotesView() {
   companyNoteItems = await api("/api/company-notes");
-  if (activeView === "COMPANY_NOTES" && activeEditor === null) renderCompanyNotesContent();
+  if ((activeView === "COMPANY_NOTES" || (activeView === "PREPARE" && activePrepareView === "COMPANY_NOTES")) && activeEditor === null) renderCompanyNotesContent();
 }
 
 function renderCompanyNotesContent() {
@@ -2570,6 +2858,10 @@ function renderNoteEditor() {
 
   const backHandler = () => {
     activeEditor = null;
+    if (activeView === "PREPARE") {
+      renderPrepareView();
+      return;
+    }
     renderViewShell();
     if (activeView === "QUESTION_BANK") renderQuestionBankContent();
     else if (activeView === "INTERVIEW_STORIES") renderInterviewStoriesContent();
@@ -2716,15 +3008,18 @@ async function loadJobs() {
   renderViewShell();
   if (activeView === "DASHBOARD") {
     userProfile = await api("/api/user-profile");
-    renderDashboardView();
+    await renderDashboardView();
   } else if (activeView === "SUMMARY") {
     renderSummaryView();
+  } else if (activeView === "PREPARE") {
+    await renderPrepareView();
   } else if (activeView === "PROFILES") {
     await loadProfiles();
   } else if (MODULE_VIEWS[activeView]) {
     if (activeEditor !== null) {
       renderNoteEditor();
     } else if (activeView === "WEEKLY_REVIEW") {
+      userProfile = await api("/api/user-profile");
       await renderWeeklyReviewView();
     } else if (activeView === "QUESTION_BANK") {
       renderQuestionBankContent();
@@ -2819,19 +3114,20 @@ function openJdDialogForJob(job) {
 }
 
 newJobBtn.addEventListener("click", () => {
-  if (activeView === "PROFILES") {
+  const context = activeView === "PREPARE" ? activePrepareView : activeView;
+  if (context === "PROFILES") {
     profileDialog.showModal();
     return;
   }
-  if (activeView === "QUESTION_BANK") {
+  if (context === "QUESTION_BANK") {
     openNoteEditor("question");
     return;
   }
-  if (activeView === "INTERVIEW_STORIES") {
+  if (context === "INTERVIEW_STORIES") {
     openNoteEditor("story");
     return;
   }
-  if (activeView === "COMPANY_NOTES") {
+  if (context === "COMPANY_NOTES") {
     openNoteEditor("company");
     return;
   }
@@ -2849,12 +3145,22 @@ dashboardNavButton.addEventListener("click", () => {
   activeEditor = null;
   loadJobs();
 });
+applicationsNavButton.addEventListener("click", () => {
+  activeView = "APPLICATIONS";
+  activeEditor = null;
+  loadJobs();
+});
+prepareNavButton.addEventListener("click", () => {
+  activeView = "PREPARE";
+  activeEditor = null;
+  loadJobs();
+});
 summaryNavButton.addEventListener("click", () => {
   activeView = "SUMMARY";
   activeEditor = null;
   loadJobs();
 });
-profilesNavButton.addEventListener("click", () => {
+profilesNavButton?.addEventListener("click", () => {
   activeView = "PROFILES";
   activeEditor = null;
   loadJobs();

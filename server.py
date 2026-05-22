@@ -55,6 +55,18 @@ def normalize_stage_status(stage: str, status: str | None) -> str:
     return normalize_status(status)
 
 
+def stage_for_status(status: str) -> str | None:
+    if status == "SAVED":
+        return "SAVED"
+    if status in {"APPLIED_SUCCESS", "APPLIED_REJECTED"}:
+        return "APPLIED"
+    if status in {"ASSESSMENT_PENDING", "OA", "VI", "TECH_TEST", "ASSESSMENT_COMPLETED", "ASSESSMENT_REJECTED"}:
+        return "ASSESSMENT"
+    if status in {"INTERVIEW_1", "INTERVIEW_2", "INTERVIEW_FINAL", "INTERVIEW_COMPLETED", "INTERVIEW_REJECTED"}:
+        return "INTERVIEW"
+    return None
+
+
 def normalize_job_type(value: str | None) -> str:
     job_type = (value or DEFAULT_JOB_TYPE).strip()
     if job_type not in KNOWN_JOB_TYPES:
@@ -257,7 +269,7 @@ def init_db() -> None:
             UPDATE job_applications
             SET status = 'OA_PENDING',
                 current_stage = 'ASSESSMENT'
-            WHERE status IN ('OA', 'OA_PENDING', 'OA_COMPLETED')
+            WHERE status IN ('OA_PENDING', 'OA_COMPLETED')
             """
         )
         conn.execute(
@@ -265,7 +277,7 @@ def init_db() -> None:
             UPDATE job_applications
             SET status = 'INTERVIEW_PENDING',
                 current_stage = 'INTERVIEW'
-            WHERE status IN ('INTERVIEW', 'INTERVIEW_PENDING', 'INTERVIEW_COMPLETED')
+            WHERE status IN ('INTERVIEW', 'INTERVIEW_PENDING')
             """
         )
 
@@ -316,6 +328,7 @@ SHARED_PROFILE_KEYS = (
     "visa_status",
     "needs_sponsorship",
     "right_to_work",
+    "my_skills",
 )
 
 
@@ -337,6 +350,14 @@ def get_user_profile_fields(conn: sqlite3.Connection) -> dict:
 
 def clean_profile_fields(payload: dict, keys: tuple[str, ...]) -> dict:
     return {key: str(payload.get(key) or "").strip() for key in keys if key in payload}
+
+
+def clean_user_profile_updates(payload: dict) -> dict:
+    updates = clean_profile_fields(payload, SHARED_PROFILE_KEYS)
+    for key, value in payload.items():
+        if re.fullmatch(r"week_note_\d{4}_\d{2}", key) or re.fullmatch(r"review_note_\d{4}-\d{2}-\d{2}", key):
+            updates[key] = str(value or "").strip()
+    return updates
 
 
 def normalize_tags(value: object) -> list[str]:
@@ -636,6 +657,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/weekly-review":
             self.get_weekly_review()
             return
+        if path == "/api/calendar-day":
+            self.get_calendar_day(parse_qs(parsed.query))
+            return
         if path == "/api/question-bank":
             self.list_question_bank()
             return
@@ -895,6 +919,9 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError as error:
                 self.send_error_json(str(error))
                 return
+            inferred_stage = stage_for_status(updates["status"])
+            if inferred_stage and "current_stage" not in updates:
+                updates["current_stage"] = inferred_stage
         if updates.get("current_stage") == "SAVED":
             updates["status"] = "SAVED"
             updates["apply_time"] = ""
@@ -1150,7 +1177,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def update_user_profile(self) -> None:
         payload = self.read_json()
-        updates = clean_profile_fields(payload, SHARED_PROFILE_KEYS)
+        updates = clean_user_profile_updates(payload)
         with db() as conn:
             fields = get_user_profile_fields(conn)
             fields.update(updates)
@@ -1304,6 +1331,50 @@ class Handler(BaseHTTPRequestHandler):
             "stale_jobs": [row_to_dict(r) for r in stale_jobs],
             "rejected_this_week": [row_to_dict(r) for r in rejected_this_week],
             "period_days": 7,
+        })
+
+    def get_calendar_day(self, query: dict) -> None:
+        day = (query.get("date", [""])[0] or "").strip()
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", day):
+            self.send_error_json("date must be YYYY-MM-DD")
+            return
+
+        with db() as conn:
+            recorded_jobs = conn.execute(
+                """
+                SELECT id, company_name, position_name, current_stage, status, created_at
+                FROM job_applications
+                WHERE substr(created_at, 1, 10) = ?
+                ORDER BY created_at DESC
+                """,
+                (day,),
+            ).fetchall()
+            applied_jobs = conn.execute(
+                """
+                SELECT id, company_name, position_name, current_stage, status, apply_time
+                FROM job_applications
+                WHERE substr(apply_time, 1, 10) = ?
+                ORDER BY apply_time DESC
+                """,
+                (day,),
+            ).fetchall()
+            timeline_events = conn.execute(
+                """
+                SELECT t.id, t.event_title, t.event_time, t.source, t.notes,
+                       j.id AS job_id, j.company_name, j.position_name
+                FROM timeline_events t
+                JOIN job_applications j ON t.job_application_id = j.id
+                WHERE substr(t.event_time, 1, 10) = ?
+                ORDER BY t.event_time DESC, t.id DESC
+                """,
+                (day,),
+            ).fetchall()
+
+        self.send_json({
+            "date": day,
+            "recorded_jobs": [row_to_dict(r) for r in recorded_jobs],
+            "applied_jobs": [row_to_dict(r) for r in applied_jobs],
+            "timeline_events": [row_to_dict(r) for r in timeline_events],
         })
 
     def list_question_bank(self) -> None:
