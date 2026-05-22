@@ -431,7 +431,43 @@ def extract_docx_text(path: Path) -> str:
     return "\n".join(paragraphs)
 
 
-def extract_pdf_text(path: Path) -> str:
+def extract_pdf_text_with_pdfplumber(path: Path) -> str:
+    try:
+        import pdfplumber  # type: ignore
+    except ImportError:
+        return ""
+
+    pages = []
+    try:
+        with pdfplumber.open(path) as pdf:
+            for page in pdf.pages:
+                text = page.extract_text(x_tolerance=1, y_tolerance=3) or ""
+                if text.strip():
+                    pages.append(text.strip())
+    except Exception:
+        return ""
+    return "\n\n".join(pages).strip()
+
+
+def extract_pdf_text_with_pypdf(path: Path) -> str:
+    try:
+        from pypdf import PdfReader  # type: ignore
+    except ImportError:
+        return ""
+
+    pages = []
+    try:
+        reader = PdfReader(str(path))
+        for page in reader.pages:
+            text = page.extract_text() or ""
+            if text.strip():
+                pages.append(text.strip())
+    except Exception:
+        return ""
+    return "\n\n".join(pages).strip()
+
+
+def extract_pdf_text_fallback(path: Path) -> str:
     raw = path.read_bytes()
     chunks = []
     for stream_match in re.finditer(rb"stream\r?\n(.*?)\r?\nendstream", raw, flags=re.S):
@@ -454,6 +490,22 @@ def extract_pdf_text(path: Path) -> str:
         chunks = re.findall(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}|https?://[^\s<>()]+|[A-Za-z][A-Za-z0-9 ,.'@:/+\-]{8,}", text)
     cleaned = "\n".join(chunk.replace(r"\(", "(").replace(r"\)", ")") for chunk in chunks)
     return re.sub(r"\s+\n", "\n", cleaned).strip()
+
+
+def extract_pdf_text(path: Path) -> str:
+    best_text = ""
+    for extractor in (
+        extract_pdf_text_with_pdfplumber,
+        extract_pdf_text_with_pypdf,
+        extract_pdf_text_fallback,
+    ):
+        text = extractor(path)
+        clean_text = text.strip()
+        if len(clean_text) > len(best_text):
+            best_text = clean_text
+        if len(clean_text) >= 80:
+            return clean_text
+    return best_text
 
 
 def extract_binary_text(path: Path) -> str:
