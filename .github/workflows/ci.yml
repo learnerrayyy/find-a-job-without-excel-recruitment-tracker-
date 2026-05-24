@@ -1,0 +1,180 @@
+name: CI
+
+# ── 触发条件 ────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# ── 并发控制：同一分支新 push 自动取消旧的运行 ──────────────────────────────
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# ── 权限：允许创建 PR 和写入 contents ────────────────────────────────────────
+permissions:
+  contents: write
+  pull-requests: write
+
+# ════════════════════════════════════════════════════════════════════════════
+jobs:
+
+  # ── 1. 语法检查 ─────────────────────────────────────────────────────────────
+  lint:
+    name: Syntax checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python syntax (server.py)
+        run: python -m py_compile server.py
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: JS syntax (web/app.js)
+        run: node --check web/app.js
+
+  # ── 2. 冒烟测试 ─────────────────────────────────────────────────────────────
+  smoke-test:
+    name: Smoke test
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run smoke test
+        run: python tests/smoke_test.py
+
+  # ── 3. 冲突检测（仅 push 事件）──────────────────────────────────────────────
+  conflict-check:
+    name: Merge conflict check
+    runs-on: ubuntu-latest
+    needs: lint
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check mergeability with main
+        run: |
+          git fetch origin main
+          base=$(git merge-base HEAD origin/main)
+          echo "Merge base: $base"
+
+          # 尝试 dry-run merge，不产生 commit
+          if git merge --no-commit --no-ff origin/main 2>&1 | grep -q "CONFLICT"; then
+            echo "::error::此分支与 main 存在合并冲突，请先在本地解决后重新推送。"
+            git merge --abort
+            exit 1
+          fi
+
+          git merge --abort 2>/dev/null || true
+          echo "No conflicts detected."
+
+  # ── 4. 自动开 PR + 开启自动合并（仅 push 事件，所有检查通过后）──────────────
+  open-pr:
+    name: Open PR + enable auto-merge
+    runs-on: ubuntu-latest
+    needs: [smoke-test, conflict-check]
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── 4a. 生成 PR body（含最近提交摘要）──────────────────────────────────
+      - name: Build PR body
+        id: body
+        run: |
+          branch="${GITHUB_REF_NAME}"
+
+          # 取最近 10 条与 main 有差异的 commit（单行格式）
+          commits=$(git log origin/main..HEAD --oneline --max-count=10 2>/dev/null || echo "（无提交记录）")
+
+          # 写入多行 output
+          {
+            echo 'content<<BODY_EOF'
+            echo "## 变更摘要"
+            echo ""
+            echo "由 CI 自动创建 · 分支 \`${branch}\` · 语法检查与冒烟测试全部通过"
+            echo ""
+            echo "### 包含的提交"
+            echo '```'
+            echo "$commits"
+            echo '```'
+            echo ""
+            echo "### CI 检查项"
+            echo "- ✅ Python 语法 (\`py_compile\`)"
+            echo "- ✅ JS 语法 (\`node --check\`)"
+            echo "- ✅ 冒烟测试 (\`tests/smoke_test.py\`)"
+            echo "- ✅ 无合并冲突"
+            echo 'BODY_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      # ── 4b. 创建 PR（若已存在则跳过）───────────────────────────────────────
+      - name: Create PR if not exists
+        id: create-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          branch="${GITHUB_REF_NAME}"
+
+          pr_number=$(gh pr list \
+            --head "$branch" \
+            --base main \
+            --state open \
+            --json number \
+            --jq '.[0].number')
+
+          if [ -z "$pr_number" ]; then
+            pr_url=$(gh pr create \
+              --base main \
+              --head "$branch" \
+              --title "feat: ${branch}" \
+              --body "${{ steps.body.outputs.content }}")
+            pr_number=$(gh pr view "$pr_url" --json number --jq '.number')
+            echo "✅ 已创建 PR #${pr_number}：${pr_url}"
+          else
+            echo "PR #${pr_number} 已存在，跳过创建。"
+            # 更新 PR body 为最新提交摘要
+            gh pr edit "$pr_number" --body "${{ steps.body.outputs.content }}" || true
+            echo "已更新 PR #${pr_number} 的描述。"
+          fi
+
+          echo "pr_number=${pr_number}" >> "$GITHUB_OUTPUT"
+
+      # ── 4c. 开启 auto-merge ──────────────────────────────────────────────
+      - name: Enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pr_number="${{ steps.create-pr.outputs.pr_number }}"
+
+          if [ -z "$pr_number" ]; then
+            echo "⚠ 未能获取 PR 编号，跳过 auto-merge。"
+            exit 0
+          fi
+
+          if gh pr merge "$pr_number" --auto --squash 2>/dev/null; then
+            echo "✅ PR #${pr_number} 已开启 auto-merge（squash）。"
+            echo "   所有必需的检查通过后将自动合并进 main。"
+          else
+            echo "⚠ 无法开启 auto-merge。"
+            echo "   请前往 Settings → General → Pull Requests → 勾选 'Allow auto-merge'。"
+            echo "   同时需要在 Settings → Branches → main 的保护规则中"
+            echo "   勾选 'Require status checks to pass before merging'。"
+          fi
