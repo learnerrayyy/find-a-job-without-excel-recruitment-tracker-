@@ -32,12 +32,18 @@ jobs:
       - name: Python syntax
         run: python -m py_compile server.py
 
+      - name: Python lint (ruff)
+        run: pip install ruff --quiet && ruff check server.py
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: JS syntax
         run: node --check web/app.js
+
+      - name: JS lint (eslint)
+        run: npm install --silent && npx eslint web/app.js
 
   # ── 2. 冒烟测试 ──────────────────────────────────────────────────────────────
   smoke-test:
