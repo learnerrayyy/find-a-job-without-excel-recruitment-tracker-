@@ -1,21 +1,127 @@
 #!/bin/sh
 set -e
 
-echo "⏳ Pre-push: 同步 main 最新代码..."
+echo "⏳ Pre-push: 检查与 main 的同步状态..."
 
-# 暂存本地未提交的改动
-if ! git diff --quiet || ! git diff --cached --quiet; then
-  git stash --include-untracked --quiet
-  STASHED=1
-fi
-
-# 拉最新 main 并 rebase
 git fetch origin main --quiet
-git rebase origin/main
 
-# 恢复暂存
-if [ "${STASHED}" = "1" ]; then
-  git stash pop --quiet
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+BEHIND=$(git rev-list --count HEAD..origin/main 2>/dev/null || echo 0)
+AHEAD=$(git rev-list --count origin/main..HEAD 2>/dev/null || echo 0)
+DIRTY=0
+APPLIED_AHEAD=0
+UNAPPLIED_AHEAD=0
+
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  DIRTY=1
 fi
 
-echo "✅ 同步完成，继续 push。"
+if [ "$AHEAD" -gt 0 ]; then
+  APPLIED_AHEAD=$(git cherry origin/main HEAD | awk '$1 == "-" { count++ } END { print count + 0 }')
+  UNAPPLIED_AHEAD=$(git cherry origin/main HEAD | awk '$1 == "+" { count++ } END { print count + 0 }')
+fi
+
+echo "   ${BRANCH}: 领先 ${AHEAD} 个提交，落后 ${BEHIND} 个提交"
+
+if [ "$BEHIND" -eq 0 ]; then
+  echo "✅ 已是最新，继续 push。"
+  exit 0
+fi
+
+echo ""
+echo "⚠  main 有 ${BEHIND} 个本地没有的提交。"
+echo ""
+echo "这个 hook 不会自动 rebase 或 stash。"
+echo "原因：历史遗留分支如果曾经被 squash merge 到 main，自动 rebase 会把旧提交重放到 main 上，容易产生大量重复冲突。"
+echo ""
+
+if git merge-base --is-ancestor HEAD origin/main || [ "$AHEAD" -eq 0 ]; then
+  if [ "$DIRTY" -eq 1 ]; then
+    echo "❌ 当前有未提交改动，hook 不会移动分支指针。"
+    echo "请先 commit 或 stash，然后重新 push。"
+    exit 1
+  fi
+
+  echo "✅ 当前状态可以安全 fast-forward，正在同步到 origin/main..."
+  git merge --ff-only origin/main
+  echo "✅ 同步完成，继续 push。"
+  exit 0
+fi
+
+if [ "$AHEAD" -gt 0 ] && [ "$UNAPPLIED_AHEAD" -eq 0 ]; then
+  echo "⚠  当前分支领先的提交内容已经等价存在于 main。"
+  echo "   这通常是历史遗留 squash merge 分支。"
+  echo ""
+
+  if [ "${PRE_PUSH_RESET_MERGED:-0}" = "1" ]; then
+    if [ "$DIRTY" -eq 1 ]; then
+      echo "❌ 当前有未提交改动，不能自动重置。请先 commit 或 stash。"
+      exit 1
+    fi
+
+    BACKUP_BRANCH="backup/${BRANCH}-before-sync-$(date +%Y%m%d%H%M%S)"
+    echo "✅ 已启用 PRE_PUSH_RESET_MERGED=1。"
+    echo "   创建备份分支：${BACKUP_BRANCH}"
+    git branch "${BACKUP_BRANCH}"
+    echo "   重置当前分支到 origin/main..."
+    git reset --hard origin/main
+    echo "✅ 同步完成，继续 push。"
+    exit 0
+  fi
+
+  echo "如果你确认这些提交已经进 main，可以用下面这条命令自动备份并同步："
+  echo "  PRE_PUSH_RESET_MERGED=1 git push"
+  echo ""
+fi
+
+if [ "$APPLIED_AHEAD" -gt 0 ]; then
+  echo "❌ 当前分支混合了 ${APPLIED_AHEAD} 个已进 main 的旧提交和 ${UNAPPLIED_AHEAD} 个新提交。"
+  echo ""
+  echo "为了避免把历史遗留提交重新合并，请先从 main 开一个干净分支，再把新改动迁过去。"
+  echo "常用做法："
+  echo "  git switch main"
+  echo "  git pull --ff-only origin main"
+  echo "  git switch -c ${BRANCH}-clean"
+  echo "  git cherry-pick <真正需要保留的新提交>"
+  echo ""
+  echo "确认处理好同步状态后，再重新 git push。"
+  exit 1
+fi
+
+if [ "$AHEAD" -gt 0 ] && [ "$BEHIND" -gt 0 ]; then
+  if [ "$DIRTY" -eq 1 ]; then
+    echo "❌ 当前有未提交改动，hook 不会自动合并 main。"
+    echo "请先 commit 或 stash，然后重新 push。"
+    exit 1
+  fi
+
+  echo "✅ 当前分支有新工作，同时 main 也更新了。"
+  echo "   正在用普通 merge 把 origin/main 合进当前分支..."
+  if git merge --no-edit origin/main; then
+    echo "✅ main 已合入当前分支，继续 push。"
+    exit 0
+  fi
+
+  git merge --abort 2>/dev/null || true
+  echo ""
+  echo "❌ 自动合并 main 失败：当前分支与 main 有真实冲突。"
+  echo "请手动解决："
+  echo "  git fetch origin main"
+  echo "  git merge origin/main"
+  echo "  git add <文件>"
+  echo "  git commit"
+  echo ""
+  echo "确认处理好同步状态后，再重新 git push。"
+  exit 1
+fi
+
+echo "❌ 当前分支同时领先 main ${AHEAD} 个提交、落后 main ${BEHIND} 个提交。"
+echo ""
+echo "如果这些提交还没有进入 main，需要手动合并并解决冲突："
+echo "  git fetch origin main"
+echo "  git merge origin/main"
+echo "  git add <文件>"
+echo "  git commit"
+echo ""
+echo "确认处理好同步状态后，再重新 git push。"
+exit 1

@@ -68,9 +68,9 @@ jobs:
       - name: Check mergeability with main
         run: |
           git fetch origin main --quiet
-          if git merge --no-commit --no-ff origin/main 2>&1 | grep -q "CONFLICT"; then
-            echo "::error::Branch has merge conflicts with main. Resolve locally before pushing."
-            git merge --abort
+          if ! git merge --no-commit --no-ff origin/main; then
+            echo "::error::Branch cannot merge cleanly with main. Resolve locally before pushing."
+            git merge --abort 2>/dev/null || true
             exit 1
           fi
           git merge --abort 2>/dev/null || true
@@ -143,8 +143,8 @@ jobs:
             echo "No PR number, skipping."
             exit 0
           fi
-          if gh pr merge "$pr_number" --auto --squash 2>/dev/null; then
+          if gh pr merge "$pr_number" --auto --merge 2>/dev/null; then
             echo "Auto-merge enabled for PR #${pr_number}."
           else
-            echo "Could not enable auto-merge. Check Settings -> General -> Allow auto-merge."
+            echo "Could not enable auto-merge. Check Settings -> General -> Allow auto-merge and Allow merge commits."
           fi
