@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+
+  # ── 1. 语法检查 ──────────────────────────────────────────────────────────────
+  lint:
+    name: Syntax checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python syntax
+        run: python -m py_compile server.py
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: JS syntax
+        run: node --check web/app.js
+
+  # ── 2. 冒烟测试 ──────────────────────────────────────────────────────────────
+  smoke-test:
+    name: Smoke test
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run smoke test
+        run: python tests/smoke_test.py
+
+  # ── 3. 冲突检测 ──────────────────────────────────────────────────────────────
+  conflict-check:
+    name: Merge conflict check
+    runs-on: ubuntu-latest
+    needs: lint
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check mergeability with main
+        run: |
+          git fetch origin main --quiet
+          if git merge --no-commit --no-ff origin/main 2>&1 | grep -q "CONFLICT"; then
+            echo "::error::Branch has merge conflicts with main. Resolve locally before pushing."
+            git merge --abort
+            exit 1
+          fi
+          git merge --abort 2>/dev/null || true
+          echo "No conflicts detected."
+
+  # ── 4. 自动开 PR + 自动合并 ──────────────────────────────────────────────────
+  open-pr:
+    name: Open PR + enable auto-merge
+    runs-on: ubuntu-latest
+    needs: [smoke-test, conflict-check]
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Write PR body to file
+        run: |
+          git fetch origin main --quiet
+          commits=$(git log origin/main..HEAD --oneline --max-count=10 2>/dev/null || echo "(no commits)")
+          {
+            echo "## Summary"
+            echo ""
+            echo "Auto-generated PR — lint and smoke tests passing."
+            echo ""
+            echo "## CI Checks"
+            echo "- Python syntax (py_compile)"
+            echo "- JS syntax (node --check)"
+            echo "- Smoke test (tests/smoke_test.py)"
+            echo "- No merge conflicts"
+            echo ""
+            echo "## Commits"
+            echo '```'
+            echo "$commits"
+            echo '```'
+          } > /tmp/pr-body.md
+
+      - name: Create or update PR
+        id: create-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          branch="${GITHUB_REF_NAME}"
+          pr_number=$(gh pr list \
+            --head "$branch" \
+            --base main \
+            --state open \
+            --json number \
+            --jq '.[0].number')
+          if [ -z "$pr_number" ]; then
+            pr_url=$(gh pr create \
+              --base main \
+              --head "$branch" \
+              --title "feat: ${branch}" \
+              --body-file /tmp/pr-body.md)
+            pr_number=$(gh pr view "$pr_url" --json number --jq '.number')
+            echo "Created PR #${pr_number}: ${pr_url}"
+          else
+            gh pr edit "$pr_number" --body-file /tmp/pr-body.md || true
+            echo "PR #${pr_number} already exists, body updated."
+          fi
+          echo "pr_number=${pr_number}" >> "$GITHUB_OUTPUT"
+
+      - name: Enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pr_number="${{ steps.create-pr.outputs.pr_number }}"
+          if [ -z "$pr_number" ]; then
+            echo "No PR number, skipping."
+            exit 0
+          fi
+          if gh pr merge "$pr_number" --auto --squash 2>/dev/null; then
+            echo "Auto-merge enabled for PR #${pr_number}."
+          else
+            echo "Could not enable auto-merge. Check Settings -> General -> Allow auto-merge."
+          fi

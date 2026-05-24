@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Job Tracker Capture",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Save the current job page into the local Job Application Tracker.",
   "action": {
     "default_popup": "popup.html",

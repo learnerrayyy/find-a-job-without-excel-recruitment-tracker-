@@ -8,6 +8,7 @@ const applyUrlInput = document.querySelector("#applyUrlInput");
 const jdContentInput = document.querySelector("#jdContentInput");
 const recaptureBtn = document.querySelector("#recaptureBtn");
 const saveBtn = document.querySelector("#saveBtn");
+const openDashboardBtn = document.querySelector("#openDashboardBtn");
 const message = document.querySelector("#message");
 const serverStatus = document.querySelector("#serverStatus");
 const captureHint = document.querySelector("#captureHint");
@@ -56,6 +57,15 @@ function setServerStatus(text, type = "") {
   serverStatus.className = `status ${type}`.trim();
 }
 
+function openDashboard() {
+  const url = `${API_BASE}/`;
+  if (chrome?.tabs?.create) {
+    chrome.tabs.create({ url });
+    return;
+  }
+  window.open(url, "_blank", "noopener");
+}
+
 function inferFromTitle(title) {
   const cleanTitle = String(title || "").replace(/\s+/g, " ").trim();
   const parts = cleanTitle
@@ -78,31 +88,155 @@ function inferFromTitle(title) {
 
 function pageCaptureScript() {
   const selection = window.getSelection ? window.getSelection().toString().trim() : "";
-  const main = document.querySelector("main");
-  const bodyText = (main ? main.innerText : document.body.innerText || "").trim();
-  const title = document.title || "";
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  // 1. JSON-LD structured data
+  let structuredJob = null;
+  document.querySelectorAll('script[type="application/ld+json"]').forEach((script) => {
+    try {
+      const parsed = JSON.parse(script.textContent);
+      const items = Array.isArray(parsed) ? parsed : [parsed];
+      for (const item of items) {
+        if (item && item["@type"] === "JobPosting") structuredJob = item;
+      }
+    } catch (_) {}
+  });
+
+  // 2. Find the visible job-title heading in the right portion of the viewport
+  //    (skips left-column section headings like "Recommended Jobs For You")
+  let jobHeading = null;
+  for (const h of document.querySelectorAll("h1, h2")) {
+    const r = h.getBoundingClientRect();
+    const text = h.innerText.trim();
+    if (!text || text.length < 3 || text.length > 200) continue;
+    if (r.top < 40 || r.bottom > vh || r.left < vw * 0.25) continue;
+    jobHeading = h;
+    break;
+  }
+
+  // 3. Find company name — try data-test / class-name patterns first,
+  //    then look for a short visible text element just below the job heading
+  let companyName = "";
+  const companyEl = document.querySelector(
+    '[data-test="employer-name"], [class*="employerName"], [class*="EmployerName"], ' +
+    '[class*="companyName"], [class*="CompanyName"], [class*="employer-name"]'
+  );
+  if (companyEl) {
+    const r = companyEl.getBoundingClientRect();
+    if (r.top > 0 && r.top < vh) companyName = companyEl.innerText.trim();
+  }
+  if (!companyName && jobHeading) {
+    // Walk up to find the header block, then scan its descendant short-text nodes
+    let block = jobHeading.parentElement;
+    for (let i = 0; i < 6 && block && block !== document.body; i++, block = block.parentElement) {
+      if ((block.innerText || "").trim().length > 600) break; // found the header container
+    }
+    if (block) {
+      for (const el of block.querySelectorAll("a, span, p, div")) {
+        if (el.contains(jobHeading)) continue;
+        const r = el.getBoundingClientRect();
+        if (r.top < jobHeading.getBoundingClientRect().bottom) continue; // must be below heading
+        if (r.top > jobHeading.getBoundingClientRect().bottom + 120) break;
+        const text = el.innerText.trim();
+        if (text && text.length >= 2 && text.length <= 80 && !text.includes("\n")) {
+          companyName = text;
+          break;
+        }
+      }
+    }
+  }
+
+  // 4. Job-specific URL — try active card link in left panel first
+  //    Glassdoor index page URLs contain jl= or job-listing slugs
+  let jobUrl = window.location.href;
+  const activeCardSelectors = [
+    '[class*="active"] a[href*="job"]',
+    '[class*="selected"] a[href*="job"]',
+    '[aria-selected="true"] a[href]',
+    'a[data-job-id]',
+    'a[href*="jl="]',
+    'a[href*="job-listing"]',
+  ];
+  for (const sel of activeCardSelectors) {
+    try {
+      const link = document.querySelector(sel);
+      if (link && link.href && link.href !== window.location.href) { jobUrl = link.href; break; }
+    } catch (_) {}
+  }
+  // Fallback: og:url or canonical (may still be index page for Glassdoor)
+  const ogUrl = document.querySelector('meta[property="og:url"]')?.getAttribute("content");
+  const canonical = document.querySelector('link[rel="canonical"]')?.getAttribute("href");
+  if (jobUrl === window.location.href) jobUrl = ogUrl || canonical || window.location.href;
+
+  // 5. Walk up from heading to find the detail panel
+  let panel = null;
+  if (jobHeading) {
+    let el = jobHeading.parentElement;
+    for (let i = 0; i < 12 && el && el !== document.body; i++, el = el.parentElement) {
+      const len = (el.innerText || "").trim().length;
+      if (len > 400 && len < 60000) { panel = el; break; }
+    }
+  }
+  // Static selector fallback
+  if (!panel) {
+    for (const sel of [
+      '[data-test="job-detail"]', '[data-test="jobListing"]',
+      '#job-details', '#JobDescriptionContainer',
+      '.jobsearch-JobComponent', '.jobs-details__main-content',
+      '[class*="JobDetails"]', '[class*="jobDetail"]', 'article', 'main',
+    ]) {
+      const el = document.querySelector(sel);
+      if (el && el.innerText.trim().length > 300) { panel = el; break; }
+    }
+  }
+
+  // 6. Title: right-panel H1 > JSON-LD
+  let detailTitle = (jobHeading && jobHeading.innerText.trim()) || "";
+  if (!detailTitle && panel) { const h = panel.querySelector("h1, h2"); if (h) detailTitle = h.innerText.trim(); }
+  if (structuredJob && structuredJob.title) detailTitle = structuredJob.title;
+  if (!detailTitle) detailTitle = document.title || "";
+
+  // 7. JSON-LD overrides for company + URL when available
+  if (structuredJob) {
+    const org = structuredJob.hiringOrganization;
+    const ldCompany = typeof org === "object" ? org?.name : (typeof org === "string" ? org : "");
+    if (ldCompany) companyName = ldCompany;
+    if (structuredJob.url) jobUrl = structuredJob.url;
+  }
+
+  const bodyText = (panel ? panel.innerText : document.body.innerText || "").trim();
 
   return {
-    title,
-    url: window.location.href,
+    title: detailTitle,
+    companyName,
+    url: jobUrl,
     html: document.documentElement.outerHTML,
     selectedText: selection,
     bodyText,
+    structuredJob,
   };
 }
 
 function autofillPageScript(profile) {
   const fields = profile.autofill_fields || profile.parsed_json || {};
   const aliases = [
-    { key: "first_name", terms: ["first name", "firstname", "given name", "名"] },
-    { key: "last_name", terms: ["last name", "lastname", "family name", "surname", "姓"] },
-    { key: "full_name", terms: ["full name", "name", "legal name", "姓名"] },
-    { key: "email", terms: ["email", "e-mail", "邮箱", "电子邮件"] },
-    { key: "phone", terms: ["phone", "mobile", "telephone", "contact number", "电话", "手机号"] },
-    { key: "location", terms: ["location", "city", "address", "current address", "地点", "城市", "地址"] },
-    { key: "linkedin", terms: ["linkedin", "linked in"] },
-    { key: "github", terms: ["github", "git hub"] },
-    { key: "portfolio", terms: ["portfolio", "website", "personal site", "个人网站", "作品集"] },
+    { key: "first_name", terms: ["first name", "firstname", "given name", "名字", "名"] },
+    { key: "last_name", terms: ["last name", "lastname", "family name", "surname", "姓氏", "姓"] },
+    { key: "full_name", terms: ["full name", "name", "legal name", "your name", "姓名"] },
+    { key: "email", terms: ["email", "e-mail", "email address", "邮箱", "电子邮件"] },
+    { key: "phone", terms: ["phone", "mobile", "telephone", "contact number", "phone number", "电话", "手机号"] },
+    { key: "address", terms: ["address", "street address", "home address", "residential address", "住址", "地址", "家庭住址"] },
+    { key: "city", terms: ["city", "town", "城市", "所在城市"] },
+    { key: "postcode", terms: ["postcode", "postal code", "zip code", "zip", "邮编", "邮政编码"] },
+    { key: "country", terms: ["country", "nation", "国家"] },
+    { key: "location", terms: ["location", "current location", "所在地", "地点"] },
+    { key: "visa_status", terms: ["visa status", "visa type", "work visa", "签证状态", "签证"] },
+    { key: "needs_sponsorship", terms: ["sponsorship", "require sponsorship", "visa sponsorship", "need sponsorship", "担保", "是否需要担保"] },
+    { key: "right_to_work", terms: ["right to work", "work authorization", "work eligibility", "authorized to work", "工作权限"] },
+    { key: "linkedin", terms: ["linkedin", "linked in", "linkedin url", "linkedin profile"] },
+    { key: "github", terms: ["github", "github url", "github profile"] },
+    { key: "portfolio", terms: ["portfolio", "website", "personal site", "personal website", "个人网站", "作品集"] },
   ];
 
   function textForControl(control) {
@@ -140,29 +274,64 @@ function autofillPageScript(profile) {
 
   function setValue(control, value) {
     control.focus();
-    control.value = value;
+    // Use native setter so React/Vue controlled inputs pick up the change
+    const nativeSetter = Object.getOwnPropertyDescriptor(
+      control.tagName === "TEXTAREA" ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype,
+      "value"
+    );
+    if (nativeSetter) {
+      nativeSetter.set.call(control, value);
+    } else {
+      control.value = value;
+    }
     control.dispatchEvent(new Event("input", { bubbles: true }));
     control.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
-  const controls = Array.from(document.querySelectorAll("input, textarea"))
-    .filter((control) => !control.disabled && !control.readOnly && !["hidden", "file", "submit", "button", "password", "checkbox", "radio"].includes((control.type || "").toLowerCase()));
+  function setSelectValue(select, value) {
+    const needle = String(value).toLowerCase();
+    let best = null;
+    for (const opt of select.options) {
+      const t = opt.text.toLowerCase();
+      const v = opt.value.toLowerCase();
+      if (v === needle || t === needle) { best = opt; break; }
+      if (!best && (v.includes(needle) || needle.includes(v) || t.includes(needle) || needle.includes(t))) {
+        best = opt;
+      }
+    }
+    if (!best) return false;
+    select.value = best.value;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  }
+
+  const textControls = Array.from(document.querySelectorAll("input, textarea"))
+    .filter((c) => !c.disabled && !c.readOnly &&
+      !["hidden", "file", "submit", "button", "password", "checkbox", "radio"].includes((c.type || "").toLowerCase()));
+
+  const selectControls = Array.from(document.querySelectorAll("select"))
+    .filter((c) => !c.disabled);
+
   const filled = [];
   const skipped = [];
 
-  for (const control of controls) {
+  for (const control of textControls) {
     if (control.value && control.value.trim()) continue;
     const match = valueForControl(control);
-    if (!match) {
-      skipped.push(textForControl(control).slice(0, 80));
-      continue;
-    }
+    if (!match) { skipped.push(textForControl(control).slice(0, 80)); continue; }
     setValue(control, match.value);
     filled.push({ field: match.key, label: textForControl(control).slice(0, 80) });
   }
 
+  for (const select of selectControls) {
+    const match = valueForControl(select);
+    if (!match) continue;
+    const didFill = setSelectValue(select, match.value);
+    if (didFill) filled.push({ field: match.key, label: textForControl(select).slice(0, 80) });
+  }
+
   const fileInputs = Array.from(document.querySelectorAll('input[type="file"]'))
-    .filter((control) => !control.disabled).length;
+    .filter((c) => !c.disabled).length;
   return { filled, skippedCount: skipped.length, fileInputs };
 }
 
@@ -190,16 +359,30 @@ async function captureCurrentPage() {
   });
 
   capturedPage = result.result;
-  const inferred = inferFromTitle(capturedPage.title);
+  const { structuredJob } = capturedPage;
 
-  if (!companyInput.value) companyInput.value = inferred.company;
-  if (!positionInput.value) positionInput.value = inferred.position;
+  // Company name: captured element > JSON-LD > infer from title
+  if (!companyInput.value) {
+    companyInput.value = capturedPage.companyName || inferFromTitle(capturedPage.title).company || "";
+  }
+  // Position: JSON-LD title > right-panel H1 > infer from title
+  if (!positionInput.value) {
+    positionInput.value = capturedPage.title || inferFromTitle(document && "" || "").position || "";
+  }
   sourceUrlInput.value = capturedPage.url;
   applyUrlInput.value = capturedPage.url;
-  jdContentInput.value = capturedPage.selectedText || capturedPage.bodyText;
 
-  const source = capturedPage.selectedText ? "选中文本" : "页面正文";
-  captureHint.textContent = `已抓取：${source}，HTML 原始页面会一起保存。`;
+  if (structuredJob) {
+    const schemaDesc = typeof structuredJob.description === "string"
+      ? structuredJob.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
+      : "";
+    jdContentInput.value = capturedPage.selectedText || schemaDesc || capturedPage.bodyText;
+    captureHint.textContent = "已从页面结构化数据抓取，请确认公司名和岗位名。";
+  } else {
+    jdContentInput.value = capturedPage.selectedText || capturedPage.bodyText;
+    const source = capturedPage.selectedText ? "选中文本" : "页面正文";
+    captureHint.textContent = `已抓取：${source}，HTML 原始页面会一起保存。`;
+  }
   hasCapturedPage = true;
   setMessage("请确认公司名和岗位名，然后保存。", "ok");
 }
@@ -321,8 +504,9 @@ async function saveJob(event) {
   setMessage("正在保存到本地 Tracker...");
 
   const payload = Object.fromEntries(new FormData(form).entries());
-  payload.current_stage = "APPLIED";
-  payload.status = "APPLIED_SUCCESS";
+  payload.current_stage = "SAVED";
+  payload.status = "SAVED";
+  payload.next_action = "DECIDE";
   payload.html_content = capturedPage.html;
   payload.page_title = capturedPage.title;
 
@@ -347,6 +531,7 @@ async function saveJob(event) {
 recaptureBtn.addEventListener("click", () => {
   captureCurrentPage().catch((error) => setMessage(error.message, "error"));
 });
+openDashboardBtn.addEventListener("click", openDashboard);
 form.addEventListener("submit", saveJob);
 viewTabs.forEach((tab) => {
   tab.addEventListener("click", () => {

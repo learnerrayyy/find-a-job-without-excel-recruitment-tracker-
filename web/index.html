@@ -4,50 +4,33 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Job Application Tracker</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="app-shell">
       <aside class="sidebar">
-        <div>
-          <p class="eyebrow">Local CRM</p>
-          <h1>Job Tracker</h1>
-          <div class="sidebar-topline">
-            <button type="button" id="languageToggle">中文 / EN</button>
+        <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="折叠侧边栏">‹</button>
+        <div class="sidebar-content">
+          <div style="padding-top:12px">
+            <p class="eyebrow">Local CRM</p>
+            <h1>Job Tracker</h1>
+            <div class="sidebar-topline">
+              <button type="button" id="languageToggle">中文 / EN</button>
+            </div>
           </div>
+          <nav class="primary-nav">
+            <button class="summary-nav-button sidebar-home-btn" id="dashboardNavButton">Main Dashboard</button>
+            <button class="summary-nav-button" id="applicationsNavButton">Applications</button>
+            <button class="summary-nav-button" id="prepareNavButton">Prepare</button>
+            <button class="summary-nav-button" id="summaryNavButton">Funnel Analysis</button>
+          </nav>
+          <details class="nav-section" open>
+            <summary>
+              <span>Filters</span>
+            </summary>
+            <nav class="status-list" id="statusFilters"></nav>
+          </details>
         </div>
-        <button class="summary-nav-button sidebar-home-btn" id="dashboardNavButton">Main Dashboard</button>
-        <details class="nav-section" open>
-          <summary>
-            <span>Track</span>
-          </summary>
-          <nav class="status-list" id="statusFilters"></nav>
-        </details>
-        <details class="nav-section" open>
-          <summary>
-            <span>Review</span>
-          </summary>
-          <button class="summary-nav-button" id="summaryNavButton">流程总结</button>
-          <button class="summary-nav-button" data-module-view="WEEKLY_REVIEW">Weekly Review</button>
-        </details>
-        <details class="nav-section" open>
-          <summary>
-            <span>Prepare</span>
-          </summary>
-          <button class="summary-nav-button" data-module-view="QUESTION_BANK">Question Bank</button>
-          <button class="summary-nav-button" data-module-view="INTERVIEW_STORIES">Interview Stories</button>
-          <button class="summary-nav-button" data-module-view="COMPANY_NOTES">Company Notes</button>
-          <button class="summary-nav-button" id="profilesNavButton">Resume Profiles</button>
-        </details>
-        <details class="nav-section" open>
-          <summary>
-            <span>Automation</span>
-          </summary>
-          <button class="summary-nav-button" data-module-view="EMAIL_SYNC">Email Sync</button>
-          <button class="summary-nav-button" data-module-view="AI_ASSISTANT">AI Assistant</button>
-          <button class="summary-nav-button" data-module-view="COVER_LETTERS">Cover Letters</button>
-          <button class="summary-nav-button" data-module-view="AUTO_APPLY">Auto Apply</button>
-        </details>
       </aside>
 
       <main class="main">
@@ -73,12 +56,10 @@
             <table>
               <thead>
                 <tr>
-                  <th>投递时间</th>
                   <th>岗位名字</th>
-                  <th>分类</th>
                   <th>阶段</th>
-                  <th>子状态</th>
-                  <th>Timeline</th>
+                  <th>下一步</th>
+                  <th>更新</th>
                   <th>操作</th>
                 </tr>
               </thead>
@@ -99,7 +80,6 @@
             </div>
             <div class="toolbar-actions">
               <button id="editPersonalInfoBtn">编辑个人信息</button>
-              <button type="button" id="profilesExitBtn">退出</button>
             </div>
           </section>
           <div class="profile-grid" id="profilesGrid"></div>
@@ -141,6 +121,10 @@
         <label>
           阶段
           <select name="current_stage" id="stageSelect"></select>
+        </label>
+        <label>
+          下一步
+          <select name="next_action" id="nextActionSelect"></select>
         </label>
         <label>
           子状态
@@ -211,6 +195,10 @@
           <select name="current_stage" id="editStageSelect"></select>
         </label>
         <label>
+          下一步
+          <select name="next_action" id="editNextActionSelect"></select>
+        </label>
+        <label>
           子状态
           <select name="status" id="editSubStatusSelect"></select>
         </label>
@@ -243,6 +231,20 @@
         </form>
 
         <div class="timeline-list" id="timelineList"></div>
+      </div>
+    </dialog>
+
+    <dialog id="jobDetailDialog">
+      <div class="dialog-form">
+        <header>
+          <div>
+            <p class="eyebrow">Role</p>
+            <h3 id="jobDetailTitle">Role detail</h3>
+            <p class="muted" id="jobDetailMeta"></p>
+          </div>
+          <button type="button" class="icon-btn" data-close-job-detail aria-label="Close">×</button>
+        </header>
+        <div class="job-detail-grid" id="jobDetailContent"></div>
       </div>
     </dialog>
 
@@ -393,6 +395,10 @@
             <input name="right_to_work" id="personalRightToWork" />
           </label>
         </div>
+        <label style="margin-top:12px">
+          我的技能
+          <textarea name="my_skills" id="personalMySkills" rows="3" placeholder="例如：Python, SQL, React, AWS, Docker, Pandas"></textarea>
+        </label>
         <footer>
           <button value="cancel">取消</button>
           <button class="primary" value="default">保存</button>
@@ -413,6 +419,21 @@
       </div>
     </dialog>
 
-    <script src="/app.js"></script>
+    <dialog id="prepDialog">
+      <div class="dialog-form prep-dialog">
+        <header>
+          <div>
+            <p class="eyebrow" id="prepDialogEyebrow">面试备考</p>
+            <h3 id="prepDialogTitle"></h3>
+            <p class="muted" id="prepDialogMeta"></p>
+          </div>
+          <button type="button" class="icon-btn" data-close-prep aria-label="Close">×</button>
+        </header>
+        <div id="prepProgress"></div>
+        <div id="prepContent"></div>
+      </div>
+    </dialog>
+
+    <script src="app.js"></script>
   </body>
 </html>
