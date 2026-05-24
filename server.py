@@ -31,6 +31,16 @@ KNOWN_STAGES = {"SAVED", "APPLIED", "ASSESSMENT", "INTERVIEW"}
 ALLOWED_RESUME_TYPES = {".pdf", ".docx", ".doc", ".txt"}
 DEFAULT_JOB_TYPE = "FULL_TIME"
 KNOWN_JOB_TYPES = {"PART_TIME", "FULL_TIME", "INTERNSHIP"}
+DEFAULT_NEXT_ACTION = "DECIDE"
+KNOWN_NEXT_ACTIONS = {
+    "DECIDE",
+    "APPLY",
+    "WAIT",
+    "FOLLOW_UP",
+    "PREPARE",
+    "COMPLETE_TASK",
+    "ARCHIVE",
+}
 
 
 def normalize_status(value: str | None) -> str:
@@ -67,11 +77,36 @@ def stage_for_status(status: str) -> str | None:
     return None
 
 
+def default_next_action(stage: str, status: str) -> str:
+    if status.endswith("_REJECTED"):
+        return "ARCHIVE"
+    if stage == "SAVED":
+        return "DECIDE"
+    if stage == "APPLIED":
+        return "WAIT"
+    if stage in {"ASSESSMENT", "INTERVIEW"}:
+        return "PREPARE"
+    return DEFAULT_NEXT_ACTION
+
+
+def should_default_next_action(current_action: str | None, stage: str, status: str) -> bool:
+    if not current_action:
+        return True
+    return current_action == default_next_action(stage, status)
+
+
 def normalize_job_type(value: str | None) -> str:
     job_type = (value or DEFAULT_JOB_TYPE).strip()
     if job_type not in KNOWN_JOB_TYPES:
         raise ValueError("Invalid job type")
     return job_type
+
+
+def normalize_next_action(value: str | None) -> str:
+    action = (value or DEFAULT_NEXT_ACTION).strip()
+    if action not in KNOWN_NEXT_ACTIONS:
+        raise ValueError("Invalid next action")
+    return action
 
 
 def utc_now() -> str:
@@ -121,6 +156,7 @@ def init_db() -> None:
                 apply_time TEXT,
                 current_stage TEXT NOT NULL DEFAULT 'SAVED',
                 status TEXT NOT NULL DEFAULT 'SAVED',
+                next_action TEXT NOT NULL DEFAULT 'DECIDE',
                 latest_email_id INTEGER,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
@@ -240,6 +276,10 @@ def init_db() -> None:
         if "job_type" not in columns:
             conn.execute(
                 "ALTER TABLE job_applications ADD COLUMN job_type TEXT NOT NULL DEFAULT 'FULL_TIME'"
+            )
+        if "next_action" not in columns:
+            conn.execute(
+                "ALTER TABLE job_applications ADD COLUMN next_action TEXT NOT NULL DEFAULT 'DECIDE'"
             )
         now = utc_now()
         conn.execute(
@@ -831,6 +871,7 @@ class Handler(BaseHTTPRequestHandler):
             stage = normalize_stage(payload.get("current_stage"))
             status = normalize_stage_status(stage, payload.get("status"))
             job_type = normalize_job_type(payload.get("job_type"))
+            next_action = normalize_next_action(payload.get("next_action") or default_next_action(stage, status))
         except ValueError as error:
             self.send_error_json(str(error))
             return
@@ -840,6 +881,7 @@ class Handler(BaseHTTPRequestHandler):
             "job_type": job_type,
             "current_stage": stage,
             "status": status,
+            "next_action": next_action,
         })
         now = utc_now()
         with db() as conn:
@@ -848,9 +890,9 @@ class Handler(BaseHTTPRequestHandler):
                 INSERT INTO job_applications (
                     company_name, position_name, job_type, source_url, apply_url,
                     jd_local_path, html_local_path, apply_time,
-                    current_stage, status, created_at, updated_at
+                    current_stage, status, next_action, created_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     company,
@@ -863,6 +905,7 @@ class Handler(BaseHTTPRequestHandler):
                     "" if stage == "SAVED" else payload.get("apply_time", "").strip(),
                     stage,
                     status,
+                    next_action,
                     now,
                     now,
                 ),
@@ -899,6 +942,7 @@ class Handler(BaseHTTPRequestHandler):
             "job_type",
             "current_stage",
             "status",
+            "next_action",
         }
         updates = {key: payload[key] for key in allowed if key in payload}
         if "current_stage" in updates:
@@ -910,6 +954,12 @@ class Handler(BaseHTTPRequestHandler):
         if "job_type" in updates:
             try:
                 updates["job_type"] = normalize_job_type(updates["job_type"])
+            except ValueError as error:
+                self.send_error_json(str(error))
+                return
+        if "next_action" in updates:
+            try:
+                updates["next_action"] = normalize_next_action(updates["next_action"])
             except ValueError as error:
                 self.send_error_json(str(error))
                 return
@@ -934,11 +984,19 @@ class Handler(BaseHTTPRequestHandler):
         params = list(updates.values()) + [job_id]
         with db() as conn:
             existing = conn.execute(
-                "SELECT current_stage, status FROM job_applications WHERE id = ?", (job_id,)
+                "SELECT current_stage, status, next_action FROM job_applications WHERE id = ?", (job_id,)
             ).fetchone()
             if not existing:
                 self.send_error_json("Job not found", HTTPStatus.NOT_FOUND)
                 return
+            if ("current_stage" in updates or "status" in updates) and "next_action" not in updates:
+                next_stage = updates.get("current_stage", existing["current_stage"])
+                next_status = updates.get("status", existing["status"])
+                if should_default_next_action(existing["next_action"], existing["current_stage"], existing["status"]):
+                    updates["next_action"] = default_next_action(next_stage, next_status)
+                    updates["updated_at"] = utc_now()
+                    assignments = ", ".join([f"{key} = ?" for key in updates.keys()])
+                    params = list(updates.values()) + [job_id]
             conn.execute(f"UPDATE job_applications SET {assignments} WHERE id = ?", params)
             stage_changed = (
                 "current_stage" in updates

@@ -1,6 +1,7 @@
-const NAV_FILTERS = ["ALL", "PART_TIME", "FULL_TIME", "INTERNSHIP", "REJECTED"];
+const NAV_FILTERS = ["ALL", "ACTION_NEEDED", "PART_TIME", "FULL_TIME", "INTERNSHIP", "REJECTED", "ARCHIVED"];
 const JOB_TYPE_OPTIONS = ["PART_TIME", "FULL_TIME", "INTERNSHIP"];
 const STAGE_OPTIONS = ["SAVED", "APPLIED", "ASSESSMENT", "INTERVIEW"];
+const NEXT_ACTION_OPTIONS = ["DECIDE", "APPLY", "WAIT", "FOLLOW_UP", "PREPARE", "COMPLETE_TASK", "ARCHIVE"];
 const MODULE_VIEWS = {
   WEEKLY_REVIEW: {
     title: "每周复盘",
@@ -137,6 +138,8 @@ const I18N = {
     dashboardRejected: "已被拒",
     dashboardAssessments: "进入笔试",
     dashboardInterviews: "进入面试",
+    actionNeeded: "需要行动",
+    noActionNeeded: "目前没有需要立即处理的岗位。",
     recentApplications: "最近岗位",
     noRecentApplications: "暂无最近岗位",
     latestWeeklyNote: "最近复盘",
@@ -188,6 +191,8 @@ const I18N = {
     tableStage: "阶段",
     tableStatus: "子状态",
     tableTimeline: "时间线",
+    tableNextAction: "下一步",
+    tableUpdated: "更新",
     tableActions: "操作",
     emptyJobs: "还没有岗位，先新增一条。",
     jobsCount: "{count} 个岗位",
@@ -208,6 +213,7 @@ const I18N = {
     sourceUrl: "JD 页面 URL",
     applyUrl: "投递入口 URL",
     applyTime: "投递时间",
+    nextAction: "下一步",
     jobType: "分类",
     stage: "阶段",
     subStatus: "子状态",
@@ -390,6 +396,8 @@ const I18N = {
     dashboardRejected: "Rejected",
     dashboardAssessments: "Reached assessment",
     dashboardInterviews: "Reached interview",
+    actionNeeded: "Action needed",
+    noActionNeeded: "No roles need immediate action right now.",
     recentApplications: "Recent applications",
     noRecentApplications: "No recent applications yet",
     latestWeeklyNote: "Latest reflection",
@@ -441,6 +449,8 @@ const I18N = {
     tableStage: "Stage",
     tableStatus: "Status",
     tableTimeline: "Timeline",
+    tableNextAction: "Next action",
+    tableUpdated: "Updated",
     tableActions: "Actions",
     emptyJobs: "No applications yet. Add the first one.",
     jobsCount: "{count} jobs",
@@ -461,6 +471,7 @@ const I18N = {
     sourceUrl: "JD page URL",
     applyUrl: "Application URL",
     applyTime: "Applied date",
+    nextAction: "Next action",
     jobType: "Type",
     stage: "Stage",
     subStatus: "Sub-status",
@@ -635,6 +646,7 @@ const I18N = {
 const STATUS_LABELS = {
   zh: {
     ALL: "全部",
+    ACTION_NEEDED: "需要行动",
     PART_TIME: "兼职",
     FULL_TIME: "全职",
     INTERNSHIP: "实习",
@@ -653,9 +665,11 @@ const STATUS_LABELS = {
     INTERVIEW_COMPLETED: "已面试",
     INTERVIEW_REJECTED: "面试阶段被拒",
     REJECTED: "拒绝",
+    ARCHIVED: "归档",
   },
   en: {
     ALL: "All",
+    ACTION_NEEDED: "Action needed",
     PART_TIME: "Part time",
     FULL_TIME: "Full time",
     INTERNSHIP: "Internship",
@@ -674,6 +688,7 @@ const STATUS_LABELS = {
     INTERVIEW_COMPLETED: "Interview completed",
     INTERVIEW_REJECTED: "Rejected after interview",
     REJECTED: "Rejected",
+    ARCHIVED: "Archived",
   },
 };
 
@@ -829,6 +844,7 @@ const editPersonalInfoBtn = document.querySelector("#editPersonalInfoBtn");
 const jobDialog = document.querySelector("#jobDialog");
 const jobForm = document.querySelector("#jobForm");
 const jobTypeSelect = document.querySelector("#jobTypeSelect");
+const nextActionSelect = document.querySelector("#nextActionSelect");
 const stageSelect = document.querySelector("#stageSelect");
 const subStatusSelect = document.querySelector("#subStatusSelect");
 const customSubStatusField = document.querySelector("#customSubStatusField");
@@ -847,6 +863,7 @@ const editSourceUrl = document.querySelector("#editSourceUrl");
 const editApplyUrl = document.querySelector("#editApplyUrl");
 const editApplyTime = document.querySelector("#editApplyTime");
 const editJobTypeSelect = document.querySelector("#editJobTypeSelect");
+const editNextActionSelect = document.querySelector("#editNextActionSelect");
 const editStageSelect = document.querySelector("#editStageSelect");
 const editSubStatusSelect = document.querySelector("#editSubStatusSelect");
 const editCustomSubStatusField = document.querySelector("#editCustomSubStatusField");
@@ -856,6 +873,10 @@ const timelineDialogTitle = document.querySelector("#timelineDialogTitle");
 const timelineDialogMeta = document.querySelector("#timelineDialogMeta");
 const timelineForm = document.querySelector("#timelineForm");
 const timelineList = document.querySelector("#timelineList");
+const jobDetailDialog = document.querySelector("#jobDetailDialog");
+const jobDetailTitle = document.querySelector("#jobDetailTitle");
+const jobDetailMeta = document.querySelector("#jobDetailMeta");
+const jobDetailContent = document.querySelector("#jobDetailContent");
 const prepDialog = document.querySelector("#prepDialog");
 const profileDialog = document.querySelector("#profileDialog");
 const profileForm = document.querySelector("#profileForm");
@@ -899,14 +920,48 @@ function jobTypeLabel(jobType) {
   return JOB_TYPE_LABELS[currentLang][jobType] || jobType || "Full time";
 }
 
+function nextActionLabel(action) {
+  const labels = {
+    zh: {
+      DECIDE: "决定是否投",
+      APPLY: "去投递",
+      WAIT: "等待回复",
+      FOLLOW_UP: "跟进",
+      PREPARE: "准备",
+      COMPLETE_TASK: "完成任务",
+      ARCHIVE: "归档",
+    },
+    en: {
+      DECIDE: "Decide",
+      APPLY: "Apply",
+      WAIT: "Wait",
+      FOLLOW_UP: "Follow up",
+      PREPARE: "Prepare",
+      COMPLETE_TASK: "Complete task",
+      ARCHIVE: "Archive",
+    },
+  };
+  return labels[currentLang][action] || action || "-";
+}
+
 function isRejected(job) {
   return String(job.status || "").includes("REJECTED");
 }
 
+function isArchived(job) {
+  return job.next_action === "ARCHIVE";
+}
+
+function needsAction(job) {
+  return ["DECIDE", "APPLY", "FOLLOW_UP", "PREPARE", "COMPLETE_TASK"].includes(job.next_action);
+}
+
 function matchesNavFilter(job, filter) {
-  if (filter === "ALL") return true;
+  if (filter === "ALL") return !isArchived(job);
+  if (filter === "ACTION_NEEDED") return !isArchived(job) && needsAction(job);
+  if (filter === "ARCHIVED") return isArchived(job);
   if (filter === "REJECTED") return isRejected(job);
-  return job.job_type === filter;
+  return !isArchived(job) && job.job_type === filter;
 }
 
 function formatDate(value) {
@@ -994,12 +1049,10 @@ function updateStaticText() {
   editPersonalInfoBtn.textContent = t("editPersonalInfo");
 
   const tableLabels = [
-    t("tableApplyTime"),
     t("tablePosition"),
-    t("tableType"),
     t("tableStage"),
-    t("tableStatus"),
-    t("tableTimeline"),
+    t("tableNextAction"),
+    t("tableUpdated"),
     t("tableActions"),
   ];
   document.querySelectorAll("thead th").forEach((cell, index) => {
@@ -1025,9 +1078,10 @@ function updateStaticText() {
     ["#jobForm label:nth-of-type(5)", "applyTime"],
     ["#jobForm label:nth-of-type(6)", "jobType"],
     ["#jobForm label:nth-of-type(7)", "stage"],
-    ["#jobForm label:nth-of-type(8)", "subStatus"],
+    ["#jobForm label:nth-of-type(8)", "nextAction"],
+    ["#jobForm label:nth-of-type(9)", "subStatus"],
     ["#customSubStatusField", "customSubStatus"],
-    ["#jobForm label:nth-of-type(10)", "jdContent"],
+    ["#jobForm label:nth-of-type(11)", "jdContent"],
     ["#editForm label:nth-of-type(1)", "company"],
     ["#editForm label:nth-of-type(2)", "position"],
     ["#editForm label:nth-of-type(3)", "sourceUrl"],
@@ -1035,7 +1089,8 @@ function updateStaticText() {
     ["#editForm label:nth-of-type(5)", "applyTime"],
     ["#editForm label:nth-of-type(6)", "jobType"],
     ["#editForm label:nth-of-type(7)", "stage"],
-    ["#editForm label:nth-of-type(8)", "subStatus"],
+    ["#editForm label:nth-of-type(8)", "nextAction"],
+    ["#editForm label:nth-of-type(9)", "subStatus"],
     ["#editCustomSubStatusField", "customSubStatus"],
     ["#profileForm label:nth-of-type(1)", "profileName"],
     ["#profileForm label:nth-of-type(2)", "tags"],
@@ -1169,6 +1224,12 @@ function renderJobTypeSelect(select, value = "FULL_TIME") {
   )).join("");
 }
 
+function nextActionOptions(value = "DECIDE") {
+  return NEXT_ACTION_OPTIONS.map((action) => (
+    `<option value="${action}" ${value === action ? "selected" : ""}>${nextActionLabel(action)}</option>`
+  )).join("");
+}
+
 function subStatusOptionsForStage(stage, value) {
   if (stage === "SAVED") return "";
   const known = SUBSTATUS_BY_STAGE[stage] || [];
@@ -1221,20 +1282,12 @@ function renderJobs() {
   summary.textContent = t("jobsCount", { count: jobs.length });
   emptyState.style.display = jobs.length ? "none" : "block";
   jobsTable.innerHTML = jobs.map((job) => `
-    <tr class="${isRejected(job) ? "rejected-row" : job.current_stage === "SAVED" ? "saved-row" : ""}">
-      <td>${escapeHtml(formatDate(job.apply_time || job.created_at))}</td>
+    <tr class="${isArchived(job) ? "archived-row" : isRejected(job) ? "rejected-row" : job.current_stage === "SAVED" ? "saved-row" : ""}">
       <td>
         <button class="job-link" data-action="jd" data-id="${job.id}">
           ${escapeHtml(job.position_name)}
         </button>
-        <div class="muted">${escapeHtml(job.company_name)}</div>
-      </td>
-      <td>
-        <select class="inline-status" data-action="jobtype" data-id="${job.id}">
-          ${JOB_TYPE_OPTIONS.map((jobType) => `
-            <option value="${jobType}" ${(job.job_type || "FULL_TIME") === jobType ? "selected" : ""}>${jobTypeLabel(jobType)}</option>
-          `).join("")}
-        </select>
+        <div class="muted">${escapeHtml(job.company_name)} · ${jobTypeLabel(job.job_type || "FULL_TIME")}</div>
       </td>
       <td>
         <select class="inline-status" data-action="stage" data-id="${job.id}">
@@ -1242,24 +1295,18 @@ function renderJobs() {
             <option value="${stage}" ${job.current_stage === stage ? "selected" : ""}>${stageLabel(stage)}</option>
           `).join("")}
         </select>
+        <div class="muted table-subtext">${statusLabel(job.status)}</div>
       </td>
       <td>
-        ${job.current_stage === "SAVED"
-          ? `<span class="muted">${statusLabel("SAVED")}</span>`
-          : `<select class="inline-status" data-action="substatus" data-id="${job.id}">
-              ${subStatusOptionsForStage(job.current_stage, job.status)}
-            </select>`}
+        <select class="inline-status" data-action="next-action" data-id="${job.id}">
+          ${nextActionOptions(job.next_action || "DECIDE")}
+        </select>
       </td>
+      <td>${escapeHtml(formatDate(job.updated_at || job.apply_time || job.created_at))}</td>
       <td>
-        <button class="timeline-button" data-action="timeline" data-id="${job.id}">
-          ${t("timelineCount", { count: job.timeline_count || 0 })}
-        </button>
-      </td>
-      <td>
-        <div class="operation-stack">
-          ${job.current_stage === "SAVED" ? "" : `<button class="prep-btn" data-action="prep" data-id="${job.id}">${t("prepBtn")}</button>`}
+        <div class="operation-row">
+          <button data-action="detail" data-id="${job.id}">${t("detail")}</button>
           <button data-action="edit" data-id="${job.id}">${t("edit")}</button>
-          <button class="danger-button" data-action="delete" data-id="${job.id}">${t("delete")}</button>
         </div>
       </td>
     </tr>
@@ -1294,6 +1341,14 @@ function renderJobs() {
     });
   });
 
+  jobsTable.querySelectorAll("[data-action='next-action']").forEach((select) => {
+    select.addEventListener("change", async () => {
+      const job = jobs.find((item) => String(item.id) === select.dataset.id);
+      if (!job) return;
+      await patchJobFromInline(job, { next_action: select.value });
+    });
+  });
+
   jobsTable.querySelectorAll("[data-action='substatus']").forEach((select) => {
     select.addEventListener("change", async () => {
       const job = jobs.find((item) => String(item.id) === select.dataset.id);
@@ -1318,6 +1373,13 @@ function renderJobs() {
       timelineJob = job;
       await renderTimelineDialog(job);
       timelineDialog.showModal();
+    });
+  });
+
+  jobsTable.querySelectorAll("[data-action='detail']").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const job = jobs.find((item) => String(item.id) === button.dataset.id);
+      if (job) await renderJobDetailDialog(job);
     });
   });
 
@@ -1365,6 +1427,7 @@ async function patchJobFromInline(job, payload) {
     await renderTimelineDialog(timelineJob);
   }
   renderJobs();
+  return updated;
 }
 
 function renderViewShell() {
@@ -1662,6 +1725,35 @@ function dailyActivitySection(title, items, meta) {
   `;
 }
 
+function renderActionNeededCard() {
+  const items = allJobs
+    .filter((job) => !isArchived(job) && needsAction(job))
+    .slice(0, 6);
+  const groups = ["DECIDE", "APPLY", "FOLLOW_UP", "PREPARE", "COMPLETE_TASK"]
+    .map((action) => [action, items.filter((job) => job.next_action === action)])
+    .filter(([, group]) => group.length);
+  return `
+    <article class="dashboard-card dashboard-card-wide">
+      <h3>${t("actionNeeded")}</h3>
+      ${groups.length ? `<div class="action-needed-groups">
+        ${groups.map(([action, group]) => `
+          <section class="action-needed-group">
+            <h4>${nextActionLabel(action)}</h4>
+            <div class="dashboard-list">
+              ${group.map((job) => `
+                <button type="button" data-dashboard-job="${job.id}">
+                  <strong>${escapeHtml(job.position_name)}</strong>
+                  <span>${escapeHtml(job.company_name)} · ${stageLabel(job.current_stage)}</span>
+                </button>
+              `).join("")}
+            </div>
+          </section>
+        `).join("")}
+      </div>` : `<p class="muted">${t("noActionNeeded")}</p>`}
+    </article>
+  `;
+}
+
 function renderReviewCalendar(dayData) {
   const todayKey = dateKey(new Date());
   const selectedKey = dateKey(dashboardSelectedReviewDate);
@@ -1786,6 +1878,8 @@ async function renderDashboardView() {
           </button>
         </div>
       </article>
+
+      ${renderActionNeededCard()}
 
       <article class="dashboard-card">
         <h3>${t("recentApplications")}</h3>
@@ -3073,6 +3167,7 @@ function openEditDialogForJob(job) {
   editApplyUrl.value = job.apply_url || "";
   editApplyTime.value = dateInputValue(job.apply_time || job.created_at);
   renderJobTypeSelect(editJobTypeSelect, job.job_type || "FULL_TIME");
+  editNextActionSelect.innerHTML = nextActionOptions(job.next_action || "DECIDE");
   renderStageSelect(editStageSelect, job.current_stage || "APPLIED");
   renderSubStatusSelect(editSubStatusSelect, job.current_stage || "APPLIED", job.status);
   syncApplicationFieldsForStage(job.current_stage || "APPLIED", editApplyTime, editSubStatusSelect);
@@ -3093,6 +3188,70 @@ async function renderTimelineDialog(job) {
       ${item.notes ? `<p>${escapeHtml(item.notes)}</p>` : ""}
     </div>
   `).join("") : `<p class="muted">${t("noTimeline")}</p>`;
+}
+
+async function renderJobDetailDialog(job) {
+  const timeline = await api(`/api/jobs/${job.id}/timeline`);
+  jobDetailTitle.textContent = job.position_name;
+  jobDetailMeta.textContent = `${job.company_name} · ${stageLabel(job.current_stage)} · ${nextActionLabel(job.next_action)}`;
+  jobDetailContent.innerHTML = `
+    <section class="job-detail-panel">
+      <h4>${t("stage")}</h4>
+      <p>${stageLabel(job.current_stage)} · ${statusLabel(job.status)}</p>
+      <h4>${t("nextAction")}</h4>
+      <select class="inline-status" id="jobDetailNextAction">
+        ${nextActionOptions(job.next_action || "DECIDE")}
+      </select>
+      <h4>${t("tableUpdated")}</h4>
+      <p>${formatDate(job.updated_at || job.created_at)}</p>
+    </section>
+    <section class="job-detail-panel">
+      <h4>${t("timeline")}</h4>
+      ${timeline.length ? timeline.slice(0, 4).map((item) => `
+        <div class="timeline-item">
+          <p><strong>${escapeHtml(item.event_title)}</strong></p>
+          <p class="muted">${formatDate(item.event_time)}</p>
+        </div>
+      `).join("") : `<p class="muted">${t("noTimeline")}</p>`}
+    </section>
+    <section class="job-detail-actions">
+      <button type="button" data-detail-action="timeline">${t("timeline")}</button>
+      <button type="button" data-detail-action="jd">${t("openJdTitle")}</button>
+      ${job.current_stage === "SAVED" ? "" : `<button type="button" data-detail-action="prep">${t("prepBtn")}</button>`}
+      <button type="button" data-detail-action="edit">${t("edit")}</button>
+      <button type="button" class="danger-button" data-detail-action="delete">${t("delete")}</button>
+    </section>
+  `;
+  jobDetailContent.querySelector("[data-detail-action='timeline']")?.addEventListener("click", async () => {
+    jobDetailDialog.close();
+    timelineJob = job;
+    await renderTimelineDialog(job);
+    timelineDialog.showModal();
+  });
+  jobDetailContent.querySelector("#jobDetailNextAction")?.addEventListener("change", async (event) => {
+    const updated = await patchJobFromInline(job, { next_action: event.target.value });
+    await renderJobDetailDialog(updated);
+  });
+  jobDetailContent.querySelector("[data-detail-action='jd']")?.addEventListener("click", () => {
+    jobDetailDialog.close();
+    openJdDialogForJob(job);
+  });
+  jobDetailContent.querySelector("[data-detail-action='prep']")?.addEventListener("click", async () => {
+    jobDetailDialog.close();
+    await openPrepDialog(job);
+  });
+  jobDetailContent.querySelector("[data-detail-action='edit']")?.addEventListener("click", () => {
+    jobDetailDialog.close();
+    openEditDialogForJob(job);
+  });
+  jobDetailContent.querySelector("[data-detail-action='delete']")?.addEventListener("click", async () => {
+    const ok = window.confirm(t("deleteJobConfirm", { job: `${job.company_name} - ${job.position_name}` }));
+    if (!ok) return;
+    await api(`/api/jobs/${job.id}`, { method: "DELETE" });
+    jobDetailDialog.close();
+    await loadJobs();
+  });
+  jobDetailDialog.showModal();
 }
 
 function openJdDialogForJob(job) {
@@ -3236,6 +3395,7 @@ jobForm.addEventListener("submit", async (event) => {
   });
   jobForm.reset();
   renderJobTypeSelect(jobTypeSelect, "FULL_TIME");
+  nextActionSelect.innerHTML = nextActionOptions("DECIDE");
   renderStageSelect(stageSelect, "SAVED");
   renderSubStatusSelect(subStatusSelect, "SAVED", "SAVED");
   customSubStatusField.hidden = true;
@@ -3294,6 +3454,12 @@ editDialog.addEventListener("close", () => {
 timelineDialog.addEventListener("click", (event) => {
   if (event.target.matches("[data-close-timeline]")) {
     timelineDialog.close();
+  }
+});
+
+jobDetailDialog.addEventListener("click", (event) => {
+  if (event.target.matches("[data-close-job-detail]")) {
+    jobDetailDialog.close();
   }
 });
 

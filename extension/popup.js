@@ -506,6 +506,7 @@ async function saveJob(event) {
   const payload = Object.fromEntries(new FormData(form).entries());
   payload.current_stage = "SAVED";
   payload.status = "SAVED";
+  payload.next_action = "DECIDE";
   payload.html_content = capturedPage.html;
   payload.page_title = capturedPage.title;
 

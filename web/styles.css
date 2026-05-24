@@ -453,6 +453,25 @@ h3 {
   text-align: left;
 }
 
+.action-needed-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.action-needed-group {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.action-needed-group h4 {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
 .dashboard-note-preview {
   display: -webkit-box;
   max-height: 108px;
@@ -972,7 +991,7 @@ h3 {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 720px;
+  min-width: 760px;
 }
 
 th,
@@ -1025,6 +1044,15 @@ tbody tr.saved-row:hover {
   background: #dceedd;
 }
 
+tbody tr.archived-row {
+  opacity: 0.62;
+  background: #f4efec;
+}
+
+tbody tr.archived-row:hover {
+  background: #eee4df;
+}
+
 .muted {
   color: var(--muted);
 }
@@ -1057,12 +1085,17 @@ a:hover {
 
 .inline-status {
   width: 100%;
-  min-width: 180px;
+  min-width: 150px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: #fffffe;
   color: var(--text);
   padding: 7px 8px;
+}
+
+.table-subtext {
+  font-size: 12px;
+  margin-top: 4px;
 }
 
 .danger-button {
@@ -1083,6 +1116,47 @@ a:hover {
 
 .operation-stack button {
   width: 100%;
+}
+
+.operation-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 130px;
+}
+
+.operation-row button {
+  min-height: 32px;
+  padding: 0 9px;
+}
+
+.job-detail-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.job-detail-panel {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-tinted);
+  padding: 12px;
+}
+
+.job-detail-panel h4 {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+.job-detail-panel p {
+  margin-bottom: 10px;
+}
+
+.job-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .empty {

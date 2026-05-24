@@ -56,12 +56,10 @@
             <table>
               <thead>
                 <tr>
-                  <th>投递时间</th>
                   <th>岗位名字</th>
-                  <th>分类</th>
                   <th>阶段</th>
-                  <th>子状态</th>
-                  <th>Timeline</th>
+                  <th>下一步</th>
+                  <th>更新</th>
                   <th>操作</th>
                 </tr>
               </thead>
@@ -123,6 +121,10 @@
         <label>
           阶段
           <select name="current_stage" id="stageSelect"></select>
+        </label>
+        <label>
+          下一步
+          <select name="next_action" id="nextActionSelect"></select>
         </label>
         <label>
           子状态
@@ -193,6 +195,10 @@
           <select name="current_stage" id="editStageSelect"></select>
         </label>
         <label>
+          下一步
+          <select name="next_action" id="editNextActionSelect"></select>
+        </label>
+        <label>
           子状态
           <select name="status" id="editSubStatusSelect"></select>
         </label>
@@ -225,6 +231,20 @@
         </form>
 
         <div class="timeline-list" id="timelineList"></div>
+      </div>
+    </dialog>
+
+    <dialog id="jobDetailDialog">
+      <div class="dialog-form">
+        <header>
+          <div>
+            <p class="eyebrow">Role</p>
+            <h3 id="jobDetailTitle">Role detail</h3>
+            <p class="muted" id="jobDetailMeta"></p>
+          </div>
+          <button type="button" class="icon-btn" data-close-job-detail aria-label="Close">×</button>
+        </header>
+        <div class="job-detail-grid" id="jobDetailContent"></div>
       </div>
     </dialog>
 
