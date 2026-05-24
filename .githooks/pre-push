@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+
+echo "⏳ Pre-push: 同步 main 最新代码..."
+
+# 暂存本地未提交的改动
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  git stash --include-untracked --quiet
+  STASHED=1
+fi
+
+# 拉最新 main 并 rebase
+git fetch origin main --quiet
+git rebase origin/main
+
+# 恢复暂存
+if [ "${STASHED}" = "1" ]; then
+  git stash pop --quiet
+fi
+
+echo "✅ 同步完成，继续 push。"
