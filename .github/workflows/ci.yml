@@ -93,9 +93,23 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Write PR body to file
+      - name: Check whether branch has commits for PR
+        id: branch-diff
         run: |
           git fetch origin main --quiet
+          commit_count=$(git rev-list --count origin/main..HEAD)
+          echo "commit_count=${commit_count}" >> "$GITHUB_OUTPUT"
+          if [ "$commit_count" -eq 0 ]; then
+            echo "has_commits=false" >> "$GITHUB_OUTPUT"
+            echo "No commits between main and ${GITHUB_REF_NAME}; skipping PR creation."
+          else
+            echo "has_commits=true" >> "$GITHUB_OUTPUT"
+            echo "${commit_count} commit(s) ready for PR."
+          fi
+
+      - name: Write PR body to file
+        if: steps.branch-diff.outputs.has_commits == 'true'
+        run: |
           commits=$(git log origin/main..HEAD --oneline --max-count=10 2>/dev/null || echo "(no commits)")
           {
             echo "## Summary"
@@ -115,6 +129,7 @@ jobs:
           } > /tmp/pr-body.md
 
       - name: Create or update PR
+        if: steps.branch-diff.outputs.has_commits == 'true'
         id: create-pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -141,6 +156,7 @@ jobs:
           echo "pr_number=${pr_number}" >> "$GITHUB_OUTPUT"
 
       - name: Enable auto-merge
+        if: steps.branch-diff.outputs.has_commits == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
