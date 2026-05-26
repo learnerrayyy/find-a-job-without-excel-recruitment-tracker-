@@ -1,6 +1,25 @@
 # Job Application Tracker MVP
 
-这是一个零依赖本地 MVP，用 Python 标准库提供本地 API、SQLite 数据库和浏览器 Dashboard。
+这是一个本地 MVP，用 Python 标准库提供本地 API、SQLite 数据库和浏览器 Dashboard。
+
+早期版本尽量保持零依赖；现在为了更可靠地解析简历 PDF，项目增加了少量 Python 依赖。
+
+## 安装依赖
+
+推荐先创建虚拟环境：
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+当前新增依赖：
+
+* `pdfplumber`：优先用于解析简历 PDF 文本，保留更好的版面和换行信息。
+* `pypdf`：作为 PDF 文本解析的备用方案。
+
+如果没有安装依赖，系统仍然会回退到原来的标准库 PDF 解析，但复杂 PDF 的解析质量会比较有限。
 
 ## 运行
 
