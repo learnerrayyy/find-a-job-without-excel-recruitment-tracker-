@@ -20,9 +20,30 @@
           </div>
           <nav class="primary-nav">
             <button class="summary-nav-button sidebar-home-btn" id="dashboardNavButton">Main Dashboard</button>
-            <button class="summary-nav-button" id="applicationsNavButton">Applications</button>
-            <button class="summary-nav-button" id="prepareNavButton">Prepare</button>
-            <button class="summary-nav-button" id="summaryNavButton">Funnel Analysis</button>
+            <div class="nav-group">
+              <p class="nav-group-label" data-nav-label="track">Track</p>
+              <button class="summary-nav-button" id="applicationsNavButton">Applications</button>
+            </div>
+            <div class="nav-group">
+              <p class="nav-group-label" data-nav-label="prepare">Prepare</p>
+              <button class="summary-nav-button" id="prepareNavButton">Prepare Hub</button>
+              <button class="summary-nav-button" data-module-view="QUESTION_BANK">Question Bank</button>
+              <button class="summary-nav-button" data-module-view="INTERVIEW_STORIES">Interview Stories</button>
+              <button class="summary-nav-button" data-module-view="COMPANY_NOTES">Company Notes</button>
+              <button class="summary-nav-button" id="profilesNavButton">Resume Profiles</button>
+            </div>
+            <div class="nav-group">
+              <p class="nav-group-label" data-nav-label="review">Review</p>
+              <button class="summary-nav-button" id="summaryNavButton">Funnel Analysis</button>
+              <button class="summary-nav-button" data-module-view="WEEKLY_REVIEW">Weekly Review</button>
+            </div>
+            <div class="nav-group">
+              <p class="nav-group-label" data-nav-label="automation">Automation</p>
+              <button class="summary-nav-button" data-module-view="EMAIL_SYNC">Email Sync</button>
+              <button class="summary-nav-button" data-module-view="AI_ASSISTANT">AI Assistant</button>
+              <button class="summary-nav-button" data-module-view="COVER_LETTERS">Cover Letters</button>
+              <button class="summary-nav-button" data-module-view="AUTO_APPLY">Auto Apply</button>
+            </div>
           </nav>
           <details class="nav-section" open>
             <summary>

@@ -1025,6 +1025,10 @@ function updateStaticText() {
   dashboardNavButton.textContent = t("dashboard");
   applicationsNavButton.textContent = t("applications");
   prepareNavButton.textContent = t("prepare");
+  document.querySelector('[data-nav-label="track"]').textContent = t("navTrack");
+  document.querySelector('[data-nav-label="prepare"]').textContent = t("navPrepare");
+  document.querySelector('[data-nav-label="review"]').textContent = t("navReview");
+  document.querySelector('[data-nav-label="automation"]').textContent = t("navAutomation");
   const navLabels = document.querySelectorAll(".nav-section summary span");
   [t("navFilters")].forEach((label, index) => {
     if (navLabels[index]) navLabels[index].textContent = label;
