@@ -337,6 +337,51 @@ h3 {
   gap: 10px;
 }
 
+.export-dropdown {
+  position: relative;
+}
+
+.export-dropdown summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 6px 12px;
+  border: 2px solid #33272a;
+  border-radius: var(--radius);
+  background: var(--panel);
+  font-size: 13px;
+  user-select: none;
+}
+
+.export-dropdown summary::-webkit-details-marker { display: none; }
+
+.export-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--panel);
+  border: 2px solid #33272a;
+  border-radius: var(--radius);
+  box-shadow: 4px 4px 0 #33272a;
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.export-menu button {
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  padding: 10px 14px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.export-menu button:last-child { border-bottom: none; }
+.export-menu button:hover { background: var(--panel-tinted); }
+
 .toolbar {
   border: 2px solid #33272a;
   border-radius: var(--radius);
@@ -770,6 +815,80 @@ h3 {
 .module-card p {
   color: var(--muted);
   margin-bottom: 0;
+  line-height: 1.5;
+}
+
+.coming-soon-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 48px 24px;
+  gap: 16px;
+}
+
+.coming-soon-badge {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 99px;
+}
+
+.coming-soon-title {
+  font-size: 22px;
+  margin: 0;
+}
+
+.coming-soon-desc {
+  color: var(--muted);
+  max-width: 480px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.coming-soon-note {
+  font-size: 12px;
+  color: var(--warning);
+  background: #fff3e0;
+  border: 1px solid #ffe0b2;
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  max-width: 480px;
+  margin: 0;
+}
+
+.coming-soon-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+  max-width: 720px;
+  width: 100%;
+}
+
+.coming-soon-card {
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-tinted);
+  padding: 14px 16px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.coming-soon-card strong {
+  font-size: 13px;
+}
+
+.coming-soon-card span {
+  font-size: 12px;
+  color: var(--muted);
   line-height: 1.5;
 }
 
@@ -2284,6 +2403,10 @@ dialog {
 
   .module-metrics,
   .module-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .coming-soon-cards {
     grid-template-columns: 1fr;
   }
 

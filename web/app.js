@@ -826,6 +826,9 @@ const toolbar = document.querySelector(".toolbar");
 const searchInput = document.querySelector("#searchInput");
 const refreshBtn = document.querySelector("#refreshBtn");
 const newJobBtn = document.querySelector("#newJobBtn");
+const exportDropdown = document.querySelector("#exportDropdown");
+const exportCsvBtn = document.querySelector("#exportCsvBtn");
+const exportJsonBtn = document.querySelector("#exportJsonBtn");
 const languageToggle = document.querySelector("#languageToggle");
 const dashboardNavButton = document.querySelector("#dashboardNavButton");
 const applicationsNavButton = document.querySelector("#applicationsNavButton");
@@ -1461,6 +1464,7 @@ function renderViewShell() {
         ? t(MODULE_TITLE_KEYS[activeView])
         : t("applications");
   toolbar.hidden = activeEditor !== null;
+  exportDropdown.hidden = isDashboard || isSummary || isProfiles || isModule || activeEditor !== null;
   if (isModule && !activeEditor) {
     const mod = moduleText(activeView);
     if (mod) summary.textContent = mod.summary;
@@ -3011,17 +3015,26 @@ function renderModuleView() {
   const module = moduleText(activeView);
   if (!module) return;
   summary.textContent = module.summary;
+
+  const isAI = activeView === "AI_ASSISTANT";
+  const aiNote = isAI
+    ? `<p class="coming-soon-note">需要用户自己的 API Token（Claude / OpenAI）。Token 仅保存在本地，不会上传。</p>`
+    : "";
+
   moduleView.innerHTML = `
-    <div class="module-metrics">
-      ${module.metrics.map((metric) => `<span>${escapeHtml(metric)}</span>`).join("")}
-    </div>
-    <div class="module-card-grid">
-      ${module.cards.map(([title, body]) => `
-        <article class="module-card">
-          <h3>${escapeHtml(title)}</h3>
-          <p>${escapeHtml(body)}</p>
-        </article>
-      `).join("")}
+    <div class="coming-soon-shell">
+      <div class="coming-soon-badge">Coming Soon</div>
+      <h2 class="coming-soon-title">${escapeHtml(module.title)}</h2>
+      <p class="coming-soon-desc">${escapeHtml(module.summary)}</p>
+      ${aiNote}
+      <div class="coming-soon-cards">
+        ${module.cards.map(([title, body]) => `
+          <div class="coming-soon-card">
+            <strong>${escapeHtml(title)}</strong>
+            <span>${escapeHtml(body)}</span>
+          </div>
+        `).join("")}
+      </div>
     </div>
   `;
 }
@@ -3271,6 +3284,33 @@ function openJdDialogForJob(job) {
 
   jdDialog.showModal();
 }
+
+function downloadFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportCsv() {
+  const cols = ["id", "company_name", "position_name", "job_type", "current_stage", "status", "next_action", "apply_time", "source_url", "apply_url", "updated_at"];
+  const escape = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const header = cols.join(",");
+  const rows = allJobs.map((job) => cols.map((c) => escape(job[c])).join(","));
+  downloadFile(`job-tracker-${dateKey(new Date())}.csv`, [header, ...rows].join("\n"), "text/csv");
+}
+
+function exportJson() {
+  const data = allJobs.map(({ id, company_name, position_name, job_type, current_stage, status, next_action, apply_time, source_url, apply_url, updated_at, created_at }) =>
+    ({ id, company_name, position_name, job_type, current_stage, status, next_action, apply_time, source_url, apply_url, updated_at, created_at }));
+  downloadFile(`job-tracker-${dateKey(new Date())}.json`, JSON.stringify(data, null, 2), "application/json");
+}
+
+exportCsvBtn.addEventListener("click", () => { exportDropdown.removeAttribute("open"); exportCsv(); });
+exportJsonBtn.addEventListener("click", () => { exportDropdown.removeAttribute("open"); exportJson(); });
 
 newJobBtn.addEventListener("click", () => {
   const context = activeView === "PREPARE" ? activePrepareView : activeView;

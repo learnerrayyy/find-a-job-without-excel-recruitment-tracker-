@@ -32,12 +32,18 @@ jobs:
       - name: Python syntax
         run: python -m py_compile server.py
 
+      - name: Python lint (ruff)
+        run: pip install ruff --quiet && ruff check server.py
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: JS syntax
         run: node --check web/app.js
+
+      - name: JS lint (eslint)
+        run: npm install --silent && npx eslint web/app.js
 
   # ── 2. 冒烟测试 ──────────────────────────────────────────────────────────────
   smoke-test:
@@ -68,9 +74,9 @@ jobs:
       - name: Check mergeability with main
         run: |
           git fetch origin main --quiet
-          if git merge --no-commit --no-ff origin/main 2>&1 | grep -q "CONFLICT"; then
-            echo "::error::Branch has merge conflicts with main. Resolve locally before pushing."
-            git merge --abort
+          if ! git merge --no-commit --no-ff origin/main; then
+            echo "::error::Branch cannot merge cleanly with main. Resolve locally before pushing."
+            git merge --abort 2>/dev/null || true
             exit 1
           fi
           git merge --abort 2>/dev/null || true
@@ -143,8 +149,8 @@ jobs:
             echo "No PR number, skipping."
             exit 0
           fi
-          if gh pr merge "$pr_number" --auto --squash 2>/dev/null; then
+          if gh pr merge "$pr_number" --auto --merge 2>/dev/null; then
             echo "Auto-merge enabled for PR #${pr_number}."
           else
-            echo "Could not enable auto-merge. Check Settings -> General -> Allow auto-merge."
+            echo "Could not enable auto-merge. Check Settings -> General -> Allow auto-merge and Allow merge commits."
           fi
