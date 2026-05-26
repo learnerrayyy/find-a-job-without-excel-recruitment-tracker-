@@ -51,7 +51,7 @@ def main() -> None:
         print("IMPORTANT:")
         print("1. Open chrome://extensions")
         print("2. Copy the extension ID for Job Tracker Capture")
-        print(f"3. Re-run: python3 native_host/install_native_host.py <EXTENSION_ID>")
+        print("3. Re-run: python3 native_host/install_native_host.py <EXTENSION_ID>")
         print("4. Reload the Chrome extension")
     else:
         print(f"Allowed extension: chrome-extension://{extension_id}/")

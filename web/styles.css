@@ -1495,32 +1495,6 @@ dialog {
   opacity: 1;
 }
 
-.placeholder-card {
-  opacity: 0.38;
-  pointer-events: none;
-  border-style: dashed;
-  box-shadow: none;
-  position: relative;
-}
-
-.placeholder-badge {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  background: var(--line);
-  color: var(--muted);
-  padding: 2px 8px;
-  border-radius: 20px;
-  margin-bottom: 4px;
-}
-
-.placeholder-list-item {
-  opacity: 0.38;
-  pointer-events: none;
-}
-
 .module-item-header {
   display: flex;
   align-items: flex-start;
