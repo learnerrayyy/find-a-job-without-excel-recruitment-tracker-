@@ -221,6 +221,44 @@ button:disabled {
   font-weight: 750;
 }
 
+.server-help {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  border: 2px solid #33272a;
+  border-radius: var(--radius);
+  background: #fffffe;
+  box-shadow: 5px 5px 0 #33272a;
+  padding: 14px;
+}
+
+.server-help strong {
+  font-size: 14px;
+}
+
+.server-help p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.server-help code {
+  display: block;
+  overflow-wrap: anywhere;
+  border: 1px solid #33272a;
+  border-radius: 6px;
+  background: var(--panel-tinted);
+  padding: 9px 10px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.server-help-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
 #captureForm,
 .autofill-panel {
   border: 2px solid #33272a;

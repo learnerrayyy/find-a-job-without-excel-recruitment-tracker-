@@ -269,10 +269,24 @@ h3 {
 
 .primary-nav {
   display: grid;
-  gap: 6px;
+  gap: 14px;
   border-bottom: 1px solid rgb(255 255 254 / 12%);
   margin-top: 20px;
   padding-bottom: 18px;
+}
+
+.nav-group {
+  display: grid;
+  gap: 5px;
+}
+
+.nav-group-label {
+  margin: 0 0 2px;
+  color: var(--accent-soft);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
 .sidebar-home-btn.active {
@@ -1479,32 +1493,6 @@ dialog {
 
 .module-list-item:hover .operation-stack {
   opacity: 1;
-}
-
-.placeholder-card {
-  opacity: 0.38;
-  pointer-events: none;
-  border-style: dashed;
-  box-shadow: none;
-  position: relative;
-}
-
-.placeholder-badge {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  background: var(--line);
-  color: var(--muted);
-  padding: 2px 8px;
-  border-radius: 20px;
-  margin-bottom: 4px;
-}
-
-.placeholder-list-item {
-  opacity: 0.38;
-  pointer-events: none;
 }
 
 .module-item-header {

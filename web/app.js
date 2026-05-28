@@ -1025,6 +1025,10 @@ function updateStaticText() {
   dashboardNavButton.textContent = t("dashboard");
   applicationsNavButton.textContent = t("applications");
   prepareNavButton.textContent = t("prepare");
+  document.querySelector('[data-nav-label="track"]').textContent = t("navTrack");
+  document.querySelector('[data-nav-label="prepare"]').textContent = t("navPrepare");
+  document.querySelector('[data-nav-label="review"]').textContent = t("navReview");
+  document.querySelector('[data-nav-label="automation"]').textContent = t("navAutomation");
   const navLabels = document.querySelectorAll(".nav-section summary span");
   [t("navFilters")].forEach((label, index) => {
     if (navLabels[index]) navLabels[index].textContent = label;
@@ -2217,6 +2221,10 @@ async function renderQuestionBankView() {
   if ((activeView === "QUESTION_BANK" || (activeView === "PREPARE" && activePrepareView === "QUESTION_BANK")) && activeEditor === null) renderQuestionBankContent();
 }
 
+function renderModuleEmpty(message) {
+  return `<div class="module-empty"><p class="muted">${escapeHtml(message)}</p></div>`;
+}
+
 function renderQuestionBankContent() {
   const search = (moduleSearchText.QUESTION_BANK || "").toLowerCase();
   const items = questionBankItems.filter((q) => !search ||
@@ -2228,23 +2236,7 @@ function renderQuestionBankContent() {
   let content;
   if (mode === "list") {
     if (items.length === 0) {
-      content = `<div class="module-list-view">
-        <div class="module-list-item placeholder-list-item">
-          <span class="module-list-title">Why do you want to work here?</span>
-          <div class="tag-row"><span>motivation</span></div>
-          <span class="module-list-preview">Research the company's mission and values, then connect them to your own story.</span>
-        </div>
-        <div class="module-list-item placeholder-list-item">
-          <span class="module-list-title">What is your expected salary?</span>
-          <div class="tag-row"><span>HR</span><span>common</span></div>
-          <span class="module-list-preview">State a range based on market research. Stay flexible and mention you're open to discussion.</span>
-        </div>
-        <div class="module-list-item placeholder-list-item">
-          <span class="module-list-title">Do you require visa sponsorship?</span>
-          <div class="tag-row"><span>sponsorship</span></div>
-          <span class="module-list-preview">Be direct: Yes or No, then follow with your right to work status and timeline.</span>
-        </div>
-      </div>`;
+      content = renderModuleEmpty(t("noQuestions"));
     } else {
       content = `<div class="module-list-view">${items.map((q) => {
         const firstAns = q.answers?.[0];
@@ -2259,41 +2251,7 @@ function renderQuestionBankContent() {
     }
   } else {
     if (items.length === 0) {
-      content = `<div class="module-items-grid">
-        <article class="module-item-card placeholder-card">
-          <span class="placeholder-badge">示例 / Example</span>
-          <div class="module-item-header"><div class="module-item-body">
-            <h3>Why do you want to work here?</h3>
-            <div class="tag-row"><span>motivation</span></div>
-          </div></div>
-          <div class="answer-list"><div class="answer-item">
-            <p class="answer-label-tag">Formal</p>
-            <p>I'm drawn to [Company]'s mission to… which aligns with my experience in… and my long-term goal to…</p>
-          </div></div>
-        </article>
-        <article class="module-item-card placeholder-card">
-          <span class="placeholder-badge">示例 / Example</span>
-          <div class="module-item-header"><div class="module-item-body">
-            <h3>What is your expected salary?</h3>
-            <div class="tag-row"><span>HR</span><span>common</span></div>
-          </div></div>
-          <div class="answer-list"><div class="answer-item">
-            <p class="answer-label-tag">Standard</p>
-            <p>Based on my research and experience, I'm targeting £X–£Y. I'm open to discussion given the full package.</p>
-          </div></div>
-        </article>
-        <article class="module-item-card placeholder-card">
-          <span class="placeholder-badge">示例 / Example</span>
-          <div class="module-item-header"><div class="module-item-body">
-            <h3>Do you require visa sponsorship?</h3>
-            <div class="tag-row"><span>sponsorship</span></div>
-          </div></div>
-          <div class="answer-list"><div class="answer-item">
-            <p class="answer-label-tag">Direct</p>
-            <p>Yes, I currently require sponsorship. I hold a [visa type] valid until [date] and am eligible to start immediately.</p>
-          </div></div>
-        </article>
-      </div>`;
+      content = renderModuleEmpty(t("noQuestions"));
     } else {
       content = `<div class="module-items-grid">${items.map((q) => `
         <article class="module-item-card" data-id="${q.id}">
@@ -2356,23 +2314,7 @@ function renderInterviewStoriesContent() {
   let content;
   if (mode === "list") {
     if (items.length === 0) {
-      content = `<div class="module-list-view">
-        <div class="module-list-item placeholder-list-item">
-          <span class="module-list-title">Led team through critical data migration</span>
-          <div class="tag-row"><span>leadership</span><span>ownership</span></div>
-          <span class="module-list-preview">Team needed to migrate 3 years of legacy data before Q4 deadline with no downtime.</span>
-        </div>
-        <div class="module-list-item placeholder-list-item">
-          <span class="module-list-title">Handled a conflict between stakeholder priorities</span>
-          <div class="tag-row"><span>conflict</span><span>communication</span></div>
-          <span class="module-list-preview">Two senior stakeholders had conflicting requirements for the same Q3 dashboard release.</span>
-        </div>
-        <div class="module-list-item placeholder-list-item">
-          <span class="module-list-title">Delivered a project with incomplete requirements</span>
-          <div class="tag-row"><span>ambiguity</span><span>initiative</span></div>
-          <span class="module-list-preview">Joined mid-project with no documentation and a 2-week deadline.</span>
-        </div>
-      </div>`;
+      content = renderModuleEmpty(t("noStories"));
     } else {
       content = `<div class="module-list-view">${items.map((s) => `
         <div class="module-list-item" data-id="${s.id}">
@@ -2384,47 +2326,7 @@ function renderInterviewStoriesContent() {
     }
   } else {
     if (items.length === 0) {
-      content = `<div class="module-items-grid">
-        <article class="module-item-card placeholder-card">
-          <span class="placeholder-badge">示例 / Example</span>
-          <div class="module-item-header"><div class="module-item-body">
-            <h3>Led team through critical data migration</h3>
-            <div class="tag-row"><span>leadership</span><span>ownership</span></div>
-          </div></div>
-          <div class="star-grid">
-            <div class="star-field"><dt>S</dt><dd>Team needed to migrate 3 years of legacy data before Q4 deadline with no downtime.</dd></div>
-            <div class="star-field"><dt>T</dt><dd>Coordinate 4 engineers and ensure zero data loss.</dd></div>
-            <div class="star-field"><dt>A</dt><dd>Daily standups, migration checklist, automated validation tests.</dd></div>
-            <div class="star-field"><dt>R</dt><dd>Completed on time. Reduced future migration time by 40%.</dd></div>
-          </div>
-        </article>
-        <article class="module-item-card placeholder-card">
-          <span class="placeholder-badge">示例 / Example</span>
-          <div class="module-item-header"><div class="module-item-body">
-            <h3>Handled a conflict between stakeholder priorities</h3>
-            <div class="tag-row"><span>conflict</span><span>communication</span></div>
-          </div></div>
-          <div class="star-grid">
-            <div class="star-field"><dt>S</dt><dd>Two senior stakeholders had conflicting requirements for the same Q3 dashboard release.</dd></div>
-            <div class="star-field"><dt>T</dt><dd>Facilitate alignment without delaying the release timeline.</dd></div>
-            <div class="star-field"><dt>A</dt><dd>Organised a joint session, documented both needs, proposed phased delivery.</dd></div>
-            <div class="star-field"><dt>R</dt><dd>Both stakeholders agreed. Released on time with follow-up features in Q4.</dd></div>
-          </div>
-        </article>
-        <article class="module-item-card placeholder-card">
-          <span class="placeholder-badge">示例 / Example</span>
-          <div class="module-item-header"><div class="module-item-body">
-            <h3>Delivered a project with incomplete requirements</h3>
-            <div class="tag-row"><span>ambiguity</span><span>initiative</span></div>
-          </div></div>
-          <div class="star-grid">
-            <div class="star-field"><dt>S</dt><dd>Joined mid-project with no documentation and a 2-week deadline.</dd></div>
-            <div class="star-field"><dt>T</dt><dd>Reconstruct requirements and deliver a working prototype.</dd></div>
-            <div class="star-field"><dt>A</dt><dd>Interviewed 5 stakeholders, rebuilt spec, prioritised core features.</dd></div>
-            <div class="star-field"><dt>R</dt><dd>Prototype approved. Became the foundation for full product launch.</dd></div>
-          </div>
-        </article>
-      </div>`;
+      content = renderModuleEmpty(t("noStories"));
     } else {
       content = `<div class="module-items-grid">${items.map((story) => `
         <article class="module-item-card" data-id="${story.id}">
@@ -2485,23 +2387,7 @@ function renderCompanyNotesContent() {
   let content;
   if (mode === "list") {
     if (items.length === 0) {
-      content = `<div class="module-list-view">
-        <div class="module-list-item placeholder-list-item">
-          <span class="module-list-title">Google</span>
-          <div class="tag-row"><span>Tech</span><span>FAANG</span></div>
-          <span class="module-list-preview">Search, ads, and cloud. 180,000+ employees. Strong engineering culture. · 2 roles</span>
-        </div>
-        <div class="module-list-item placeholder-list-item">
-          <span class="module-list-title">Deloitte</span>
-          <div class="tag-row"><span>Consulting</span><span>Big 4</span></div>
-          <span class="module-list-preview">Global professional services firm. Structured career progression and client-facing work. · 1 role</span>
-        </div>
-        <div class="module-list-item placeholder-list-item">
-          <span class="module-list-title">Monzo</span>
-          <div class="tag-row"><span>Fintech</span><span>startup</span></div>
-          <span class="module-list-preview">UK digital bank, ~4M customers. Fast-moving product culture. · 2 roles</span>
-        </div>
-      </div>`;
+      content = renderModuleEmpty(t("noCompanyNotes"));
     } else {
       content = `<div class="module-list-view">${items.map((note) => {
         const linked = allJobs.filter((j) => j.company_name.toLowerCase() === note.company_name.toLowerCase());
@@ -2516,41 +2402,7 @@ function renderCompanyNotesContent() {
     }
   } else {
     if (items.length === 0) {
-      content = `<div class="module-items-grid">
-        <article class="module-item-card placeholder-card">
-          <span class="placeholder-badge">示例 / Example</span>
-          <div class="module-item-header"><div class="module-item-body">
-            <h3>Google</h3>
-            <div class="tag-row"><span>Tech</span><span>large corp</span><span>FAANG</span></div>
-          </div></div>
-          <p>Search, ads, and cloud. 180,000+ employees. Strong engineering culture, rigorous hiring process.</p>
-          <div class="note-field"><dt>${t("whyInterestedLabel")}</dt><dd>Work on products used by billions. Strong mentorship culture and internal mobility.</dd></div>
-          <div class="note-field"><dt>${t("interviewFocusLabel")}</dt><dd>Coding + system design heavy. Behavioral rounds test leadership and ownership.</dd></div>
-          <div class="linked-jobs-row"><span class="muted">${t("linkedJobs")}:</span><span class="linked-job-tag">Data Analyst</span><span class="linked-job-tag">PM</span></div>
-        </article>
-        <article class="module-item-card placeholder-card">
-          <span class="placeholder-badge">示例 / Example</span>
-          <div class="module-item-header"><div class="module-item-body">
-            <h3>Deloitte</h3>
-            <div class="tag-row"><span>Consulting</span><span>Big 4</span></div>
-          </div></div>
-          <p>Global professional services firm. Known for structured career progression and client-facing work across industries.</p>
-          <div class="note-field"><dt>${t("whyInterestedLabel")}</dt><dd>Exposure to diverse industries early in career. Strong graduate programme with clear progression.</dd></div>
-          <div class="note-field"><dt>${t("interviewFocusLabel")}</dt><dd>Case interviews + competency-based questions. Focus on structured thinking and communication.</dd></div>
-          <div class="linked-jobs-row"><span class="muted">${t("linkedJobs")}:</span><span class="linked-job-tag">Business Analyst</span></div>
-        </article>
-        <article class="module-item-card placeholder-card">
-          <span class="placeholder-badge">示例 / Example</span>
-          <div class="module-item-header"><div class="module-item-body">
-            <h3>Monzo</h3>
-            <div class="tag-row"><span>Fintech</span><span>startup</span></div>
-          </div></div>
-          <p>UK digital bank, ~4M customers. Fast-moving product culture, strong focus on customer transparency.</p>
-          <div class="note-field"><dt>${t("whyInterestedLabel")}</dt><dd>Mission-driven product with real user impact. Flat structure means more ownership earlier.</dd></div>
-          <div class="note-field"><dt>${t("interviewFocusLabel")}</dt><dd>Values alignment is core. Expect questions on data-driven decisions and product intuition.</dd></div>
-          <div class="linked-jobs-row"><span class="muted">${t("linkedJobs")}:</span><span class="linked-job-tag">Data Analyst</span><span class="linked-job-tag">Risk Analyst</span></div>
-        </article>
-      </div>`;
+      content = renderModuleEmpty(t("noCompanyNotes"));
     } else {
       content = `<div class="module-items-grid">${items.map((note) => {
         const linked = allJobs.filter((job) => job.company_name.toLowerCase() === note.company_name.toLowerCase());

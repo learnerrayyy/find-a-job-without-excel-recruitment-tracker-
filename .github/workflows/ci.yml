@@ -1,4 +1,5 @@
 name: CI
+# last updated: 2026-05-26
 
 on:
   push:
@@ -7,6 +8,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -30,20 +32,22 @@ jobs:
           python-version: "3.12"
 
       - name: Python syntax
-        run: python -m py_compile server.py
+        run: python -m py_compile server.py tests/smoke_test.py scripts/seed_demo_data.py native_host/job_tracker_launcher.py native_host/install_native_host.py
 
       - name: Python lint (ruff)
-        run: pip install ruff --quiet && ruff check server.py
+        run: pip install ruff --quiet && ruff check server.py tests/smoke_test.py scripts/seed_demo_data.py native_host
 
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: JS syntax
-        run: node --check web/app.js
+        run: |
+          node --check web/app.js
+          node --check extension/popup.js
 
       - name: JS lint (eslint)
-        run: npm install --silent && npx eslint web/app.js
+        run: npm install --silent && npx eslint web/app.js extension/popup.js
 
   # ── 2. 冒烟测试 ──────────────────────────────────────────────────────────────
   smoke-test:
@@ -74,6 +78,8 @@ jobs:
       - name: Check mergeability with main
         run: |
           git fetch origin main --quiet
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
           if ! git merge --no-commit --no-ff origin/main; then
             echo "::error::Branch cannot merge cleanly with main. Resolve locally before pushing."
             git merge --abort 2>/dev/null || true

@@ -7,6 +7,6 @@
     "default_popup": "popup.html",
     "default_title": "Save job"
   },
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "nativeMessaging"],
   "host_permissions": ["http://127.0.0.1:8765/*"]
 }
