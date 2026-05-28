@@ -11,8 +11,11 @@
   --accent-soft: #ffc6c7;
   --danger: #b4234d;
   --ok: #067647;
+  --shadow: 0 16px 34px rgb(51 39 42 / 10%);
+  --shadow-soft: 0 9px 22px rgb(51 39 42 / 8%);
   --radius: 8px;
   font-family: "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 * {
@@ -21,10 +24,11 @@
 
 body {
   width: 420px;
+  max-width: 100vw;
   margin: 0;
   background:
-    linear-gradient(90deg, rgb(255 198 199 / 22%) 1px, transparent 1px),
-    linear-gradient(rgb(255 198 199 / 22%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 198 199 / 14%) 1px, transparent 1px),
+    linear-gradient(rgb(255 198 199 / 14%) 1px, transparent 1px),
     var(--bg);
   background-size: 24px 24px;
   color: var(--text);
@@ -32,6 +36,7 @@ body {
 
 main {
   padding: 18px;
+  overflow-x: hidden;
 }
 
 header,
@@ -43,10 +48,12 @@ footer {
 }
 
 header {
-  border: 2px solid #33272a;
+  border: 1px solid rgb(51 39 42 / 13%);
   border-radius: var(--radius);
-  background: var(--panel);
-  box-shadow: 5px 5px 0 #33272a;
+  background:
+    linear-gradient(135deg, rgb(255 198 199 / 34%), transparent 54%),
+    var(--panel);
+  box-shadow: var(--shadow-soft);
   padding: 14px;
 }
 
@@ -58,11 +65,11 @@ header {
 
 #openDashboardBtn {
   min-height: 32px;
-  border-color: #33272a;
-  background: var(--accent-soft);
+  border-color: rgb(51 39 42 / 16%);
+  background: var(--accent);
   color: #33272a;
   font-size: 12px;
-  box-shadow: 2px 2px 0 #33272a;
+  box-shadow: 0 8px 18px rgb(217 79 121 / 18%);
 }
 
 h1,
@@ -72,6 +79,7 @@ p {
 
 h1 {
   font-size: 20px;
+  letter-spacing: -0.025em;
   line-height: 1.1;
 }
 
@@ -85,8 +93,8 @@ h1 {
 }
 
 .status {
-  border-radius: 999px;
-  border: 1px solid #33272a;
+  border-radius: 6px;
+  border: 1px solid rgb(51 39 42 / 13%);
   background: var(--panel-tinted);
   color: var(--muted);
   padding: 5px 9px;
@@ -126,6 +134,7 @@ input,
 textarea,
 select {
   width: 100%;
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--panel);
@@ -155,12 +164,16 @@ button {
   font: inherit;
   font-weight: 700;
   cursor: pointer;
-  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
 button:hover {
   border-color: var(--accent);
   transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(1px);
 }
 
 button:disabled {
@@ -169,17 +182,16 @@ button:disabled {
 }
 
 .primary {
-  border-color: #33272a;
+  border-color: rgb(51 39 42 / 18%);
   background: var(--accent);
   color: #33272a;
-  box-shadow: 3px 3px 0 #33272a;
+  box-shadow: 0 8px 18px rgb(217 79 121 / 22%);
 }
 
 .primary:hover {
-  background: var(--accent-dark);
+  background: #ff789b;
   color: #33272a;
-  box-shadow: 2px 2px 0 #33272a;
-  transform: translate(1px, 1px);
+  box-shadow: 0 12px 24px rgb(217 79 121 / 26%);
 }
 
 .hint,
@@ -209,15 +221,15 @@ button:disabled {
 }
 
 .tab {
-  border-color: #33272a;
+  border-color: rgb(51 39 42 / 13%);
   background: var(--panel);
 }
 
 .tab.active {
-  border-color: #33272a;
+  border-color: rgb(51 39 42 / 16%);
   background: var(--accent-soft);
   color: #33272a;
-  box-shadow: 3px 3px 0 #33272a;
+  box-shadow: var(--shadow-soft);
   font-weight: 750;
 }
 
@@ -225,10 +237,10 @@ button:disabled {
   display: grid;
   gap: 10px;
   margin-top: 16px;
-  border: 2px solid #33272a;
+  border: 1px solid rgb(51 39 42 / 13%);
   border-radius: var(--radius);
   background: #fffffe;
-  box-shadow: 5px 5px 0 #33272a;
+  box-shadow: var(--shadow-soft);
   padding: 14px;
 }
 
@@ -245,7 +257,7 @@ button:disabled {
 .server-help code {
   display: block;
   overflow-wrap: anywhere;
-  border: 1px solid #33272a;
+  border: 1px solid rgb(51 39 42 / 13%);
   border-radius: 6px;
   background: var(--panel-tinted);
   padding: 9px 10px;
@@ -261,10 +273,10 @@ button:disabled {
 
 #captureForm,
 .autofill-panel {
-  border: 2px solid #33272a;
+  border: 1px solid rgb(51 39 42 / 13%);
   border-radius: var(--radius);
   background: var(--panel);
-  box-shadow: 5px 5px 0 #33272a;
+  box-shadow: var(--shadow-soft);
   padding: 14px;
 }
 
@@ -296,7 +308,7 @@ button:disabled {
   gap: 6px;
   width: 100%;
   min-height: 0;
-  border: 1px solid #33272a;
+  border: 1px solid rgb(51 39 42 / 13%);
   border-radius: 6px;
   background: var(--panel-tinted);
   padding: 10px;
@@ -313,9 +325,9 @@ button:disabled {
 }
 
 .profile-option.active {
-  border-color: #33272a;
+  border-color: rgb(51 39 42 / 18%);
   background: var(--accent-soft);
-  box-shadow: 3px 3px 0 #33272a;
+  box-shadow: var(--shadow-soft);
 }
 
 .profile-option strong {

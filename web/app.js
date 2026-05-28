@@ -131,6 +131,8 @@ const I18N = {
     navPrepare: "准备",
     navAutomation: "自动化",
     navFilters: "筛选",
+    allFilter: "全部",
+    resetFilters: "重置筛选",
     prepareSummary: "把申请题、面试故事、公司笔记和简历档案集中在这里准备。",
     dashboard: "主控台",
     dashboardSummary: "先看总览，再进入左侧详细页面处理具体任务。",
@@ -376,7 +378,13 @@ const I18N = {
     hintWhyInterested: "面试时几乎必问，事先整理好，和公司价值观对齐",
     hintInterviewFocus: "根据JD和同类公司经验，总结这家公司面试的侧重方向",
     prepLabel: "面试备考",
-    prepBtn: "备考",
+    jobPrep: "岗位备考",
+    noPrepJob: "先在岗位追踪里选择一个岗位，然后点击「开始备考」。",
+    prepBackToApplications: "返回岗位追踪",
+    prepCardQuestion: "申请题卡片",
+    prepCardStory: "面试故事卡片",
+    prepNoAnswerDetail: "这条还没有保存答案内容。",
+    prepBtn: "开始备考",
     prepQuestionsSection: "题目清单",
     prepStoriesSection: "故事清单",
     prepProgress: "{q}/{qTotal} 题已准备 · {s}/{sTotal} 个故事已准备",
@@ -389,6 +397,8 @@ const I18N = {
     navPrepare: "Prepare",
     navAutomation: "Automation",
     navFilters: "Filters",
+    allFilter: "All",
+    resetFilters: "Reset filters",
     prepareSummary: "Prepare question answers, interview stories, company notes, and resume profiles in one place.",
     dashboard: "Main Dashboard",
     dashboardSummary: "Start with the overview, then use the left index for detailed work.",
@@ -634,7 +644,13 @@ const I18N = {
     hintWhyInterested: "You'll almost always be asked this — align with company values",
     hintInterviewFocus: "Based on the JD and peer experience — what does this company test for",
     prepLabel: "Interview Prep",
-    prepBtn: "Prep",
+    jobPrep: "Role prep",
+    noPrepJob: "Choose a role in Applications, then click Start prep.",
+    prepBackToApplications: "Back to applications",
+    prepCardQuestion: "Question card",
+    prepCardStory: "Story card",
+    prepNoAnswerDetail: "No answer content saved yet.",
+    prepBtn: "Start prep",
     prepQuestionsSection: "Question Checklist",
     prepStoriesSection: "Story Checklist",
     prepProgress: "{q}/{qTotal} questions ready · {s}/{sTotal} stories ready",
@@ -812,6 +828,12 @@ let moduleSearchText = {}; // { QUESTION_BANK: "", ... }
 let activeStatus = "ALL";
 let activeView = "DASHBOARD";
 let activePrepareView = "QUESTION_BANK";
+let tableFilters = {
+  job_type: "ALL",
+  current_stage: "ALL",
+  status: "ALL",
+  next_action: "ALL",
+};
 let dashboardCalendarDate = new Date();
 let dashboardSelectedReviewDate = new Date();
 let currentLang = localStorage.getItem("jobTrackerLanguage") || "zh";
@@ -819,6 +841,7 @@ if (!I18N[currentLang]) currentLang = "zh";
 
 const statusFilters = document.querySelector("#statusFilters");
 const jobsTable = document.querySelector("#jobsTable");
+const applicationsTableHead = document.querySelector("#applicationsView thead");
 const emptyState = document.querySelector("#emptyState");
 const mainTitle = document.querySelector("#mainTitle");
 const summary = document.querySelector("#summary");
@@ -881,6 +904,11 @@ const jobDetailTitle = document.querySelector("#jobDetailTitle");
 const jobDetailMeta = document.querySelector("#jobDetailMeta");
 const jobDetailContent = document.querySelector("#jobDetailContent");
 const prepDialog = document.querySelector("#prepDialog");
+const prepItemDialog = document.querySelector("#prepItemDialog");
+const prepItemEyebrow = document.querySelector("#prepItemEyebrow");
+const prepItemTitle = document.querySelector("#prepItemTitle");
+const prepItemMeta = document.querySelector("#prepItemMeta");
+const prepItemContent = document.querySelector("#prepItemContent");
 const profileDialog = document.querySelector("#profileDialog");
 const profileForm = document.querySelector("#profileForm");
 const profileEditDialog = document.querySelector("#profileEditDialog");
@@ -965,6 +993,70 @@ function matchesNavFilter(job, filter) {
   if (filter === "ARCHIVED") return isArchived(job);
   if (filter === "REJECTED") return isRejected(job);
   return !isArchived(job) && job.job_type === filter;
+}
+
+function matchesTableFilters(job) {
+  return Object.entries(tableFilters).every(([key, value]) => value === "ALL" || String(job[key] || "") === value);
+}
+
+function filterSelectHtml(key, options, labelFn) {
+  return `
+    <select class="table-head-filter" data-table-filter="${key}" aria-label="${t("filterPlaceholder")}">
+      <option value="ALL">${t("allFilter")}</option>
+      ${options.map((value) => `
+        <option value="${escapeHtml(value)}" ${tableFilters[key] === value ? "selected" : ""}>${escapeHtml(labelFn(value))}</option>
+      `).join("")}
+    </select>
+  `;
+}
+
+function renderApplicationTableHead() {
+  const statusOptions = Array.from(new Set(allJobs.map((job) => job.status).filter(Boolean)));
+  applicationsTableHead.innerHTML = `
+    <tr>
+      <th>
+        <span>${t("tablePosition")}</span>
+        ${filterSelectHtml("job_type", JOB_TYPE_OPTIONS, jobTypeLabel)}
+      </th>
+      <th>
+        <span>${t("tableStage")}</span>
+        <div class="table-head-filter-stack">
+          ${filterSelectHtml("current_stage", STAGE_OPTIONS, stageLabel)}
+          ${filterSelectHtml("status", statusOptions, statusLabel)}
+        </div>
+      </th>
+      <th>
+        <span>${t("tableNextAction")}</span>
+        ${filterSelectHtml("next_action", NEXT_ACTION_OPTIONS, nextActionLabel)}
+      </th>
+      <th>
+        <span>${t("tableUpdated")}</span>
+        <button type="button" class="table-filter-reset" data-reset-table-filters>${t("resetFilters")}</button>
+      </th>
+      <th><span>${t("tableActions")}</span></th>
+    </tr>
+  `;
+
+  applicationsTableHead.querySelectorAll("[data-table-filter]").forEach((select) => {
+    select.addEventListener("change", () => {
+      tableFilters[select.dataset.tableFilter] = select.value;
+      jobs = allJobs.filter((job) => matchesNavFilter(job, activeStatus)).filter(matchesTableFilters);
+      renderApplicationTableHead();
+      renderJobs();
+    });
+  });
+
+  applicationsTableHead.querySelector("[data-reset-table-filters]")?.addEventListener("click", () => {
+    tableFilters = {
+      job_type: "ALL",
+      current_stage: "ALL",
+      status: "ALL",
+      next_action: "ALL",
+    };
+    jobs = allJobs.filter((job) => matchesNavFilter(job, activeStatus));
+    renderApplicationTableHead();
+    renderJobs();
+  });
 }
 
 function formatDate(value) {
@@ -1054,17 +1146,7 @@ function updateStaticText() {
   emptyState.textContent = t("emptyJobs");
   profilesEmpty.textContent = t("profilesEmpty");
   editPersonalInfoBtn.textContent = t("editPersonalInfo");
-
-  const tableLabels = [
-    t("tablePosition"),
-    t("tableStage"),
-    t("tableNextAction"),
-    t("tableUpdated"),
-    t("tableActions"),
-  ];
-  document.querySelectorAll("thead th").forEach((cell, index) => {
-    cell.textContent = tableLabels[index] || cell.textContent;
-  });
+  renderApplicationTableHead();
 
   setText("#jobDialog h3", t("addJobTitle"));
   setText("#editDialog h3", t("editJobTitle"));
@@ -1312,6 +1394,7 @@ function renderJobs() {
       <td>${escapeHtml(formatDate(job.updated_at || job.apply_time || job.created_at))}</td>
       <td>
         <div class="operation-row">
+          ${job.current_stage === "SAVED" ? "" : `<button class="prep-action-btn" data-action="prep" data-id="${job.id}">${t("prepBtn")}</button>`}
           <button data-action="detail" data-id="${job.id}">${t("detail")}</button>
           <button data-action="edit" data-id="${job.id}">${t("edit")}</button>
         </div>
@@ -2149,6 +2232,7 @@ function renderModuleToolbar(viewKey) {
 
 function renderPrepareTabs() {
   const tabs = [
+    ["JOB_PREP", t("jobPrep")],
     ["QUESTION_BANK", t("questionBank")],
     ["INTERVIEW_STORIES", t("interviewStories")],
     ["COMPANY_NOTES", t("companyNotes")],
@@ -2178,6 +2262,12 @@ function attachPrepareTabHandlers() {
 async function renderPrepareView() {
   summary.textContent = t("prepareSummary");
   renderViewShell();
+  if (activePrepareView === "JOB_PREP") {
+    await renderJobPrepView();
+    moduleView.insertAdjacentHTML("afterbegin", renderPrepareTabs());
+    attachPrepareTabHandlers();
+    return;
+  }
   if (activePrepareView === "PROFILES") {
     await loadProfiles();
     profilesView.querySelector(".prepare-tabs")?.remove();
@@ -2483,29 +2573,69 @@ function extractTechFromJd(jdText) {
   });
 }
 
-async function openPrepDialog(job) {
-  prepJob = job;
-  document.querySelector("#prepDialogTitle").textContent = job.position_name;
-  document.querySelector("#prepDialogMeta").textContent = `${job.company_name} · ${stageLabel(job.current_stage)} · ${statusLabel(job.status)}`;
-  document.querySelector("#prepDialogEyebrow").textContent = t("prepLabel");
-  document.querySelector("#prepProgress").innerHTML = "";
-  document.querySelector("#prepContent").innerHTML = `<p class="prep-empty muted">加载中…</p>`;
-  prepDialog.showModal();
-  try {
-    await renderPrepDialog();
-  } catch (err) {
-    document.querySelector("#prepContent").innerHTML = `<p class="prep-empty" style="color:var(--danger)">${escapeHtml(String(err))}</p>`;
-  }
+function renderPrepQuestionPreview(question) {
+  const first = question.answers?.[0];
+  if (!first) return "";
+  const content = typeof first === "string" ? first : first.content || "";
+  return content ? `${escapeHtml(content.slice(0, 90))}${content.length > 90 ? "..." : ""}` : "";
 }
 
-async function renderPrepDialog() {
+function openPrepItemCard(type, item) {
+  const isQuestion = type === "question";
+  prepItemEyebrow.textContent = isQuestion ? t("prepCardQuestion") : t("prepCardStory");
+  prepItemTitle.textContent = isQuestion ? item.question : item.title;
+  prepItemMeta.textContent = (item.tags || []).join(" · ") || (isQuestion ? item.category || "" : "");
+
+  if (isQuestion) {
+    const answers = item.answers || [];
+    prepItemContent.innerHTML = `
+      <div class="prep-card-detail">
+        <div class="tag-row">
+          ${item.category && item.category !== "general" ? `<span>${escapeHtml(item.category)}</span>` : ""}
+          ${(item.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+        </div>
+        ${answers.length ? `
+          <div class="answer-list">
+            ${answers.map((answer) => `
+              <div class="answer-item">
+                ${(typeof answer === "object" && answer.label) ? `<p class="answer-label-tag">${escapeHtml(answer.label)}</p>` : ""}
+                <p>${escapeHtml(typeof answer === "string" ? answer : answer.content || "")}</p>
+              </div>
+            `).join("")}
+          </div>
+        ` : `<p class="muted">${t("prepNoAnswerDetail")}</p>`}
+      </div>
+    `;
+  } else {
+    prepItemContent.innerHTML = `
+      <dl class="prep-card-detail star-grid">
+        ${item.situation ? `<div class="star-field"><dt>${t("storySituationLabel")}</dt><dd>${escapeHtml(item.situation)}</dd></div>` : ""}
+        ${item.task ? `<div class="star-field"><dt>${t("storyTaskLabel")}</dt><dd>${escapeHtml(item.task)}</dd></div>` : ""}
+        ${item.action ? `<div class="star-field"><dt>${t("storyActionLabel")}</dt><dd>${escapeHtml(item.action)}</dd></div>` : ""}
+        ${item.result ? `<div class="star-field"><dt>${t("storyResultLabel")}</dt><dd>${escapeHtml(item.result)}</dd></div>` : ""}
+      </dl>
+      ${item.notes ? `<p class="story-notes muted">${escapeHtml(item.notes)}</p>` : ""}
+    `;
+  }
+  prepItemDialog.showModal();
+}
+
+async function openPrepDialog(job) {
+  prepJob = job;
+  activeView = "PREPARE";
+  activePrepareView = "JOB_PREP";
+  activeEditor = null;
+  await loadJobs();
+}
+
+async function renderPrepDialog(target = document) {
   if (!prepJob) return;
   const data = await api(`/api/jobs/${prepJob.id}/prep`);
 
-  document.querySelector("#prepDialogTitle").textContent = prepJob.position_name;
-  document.querySelector("#prepDialogMeta").textContent =
+  target.querySelector("#prepDialogTitle").textContent = prepJob.position_name;
+  target.querySelector("#prepDialogMeta").textContent =
     `${prepJob.company_name} · ${stageLabel(prepJob.current_stage)} · ${statusLabel(prepJob.status)}`;
-  document.querySelector("#prepDialogEyebrow").textContent = t("prepLabel");
+  target.querySelector("#prepDialogEyebrow").textContent = t("prepLabel");
 
   const totalItems = data.questions.length + data.stories.length;
   const readyQ = data.questions.filter((q) => q.is_ready).length;
@@ -2513,7 +2643,7 @@ async function renderPrepDialog() {
   const totalReady = readyQ + readyS;
   const pct = totalItems > 0 ? Math.round((totalReady / totalItems) * 100) : 0;
 
-  document.querySelector("#prepProgress").innerHTML = `
+  target.querySelector("#prepProgress").innerHTML = `
     <div class="prep-progress">
       <span class="prep-progress-text">${t("prepProgress", { q: readyQ, qTotal: data.questions.length, s: readyS, sTotal: data.stories.length })}</span>
       <div class="prep-bar"><div class="prep-bar-fill" style="width:${pct}%"></div></div>
@@ -2532,22 +2662,27 @@ async function renderPrepDialog() {
         <div class="prep-category">
           <div class="prep-category-label">${escapeHtml(cat)}</div>
           ${qs.map((q) => `
-            <label class="prep-item${q.is_ready ? " is-ready" : ""}">
+            <article class="prep-item prep-item-card${q.is_ready ? " is-ready" : ""}" data-prep-card="question" data-id="${q.id}">
               <input type="checkbox" class="prep-check" data-type="question" data-id="${q.id}" ${q.is_ready ? "checked" : ""} />
-              <span class="prep-item-text">${escapeHtml(q.question)}</span>
-              ${q.tags.length ? `<span class="prep-item-tags">${q.tags.map((tg) => `<span class="tag-chip">${escapeHtml(tg)}</span>`).join("")}</span>` : ""}
-            </label>`).join("")}
+              <button type="button" class="prep-card-open" data-prep-card="question" data-id="${q.id}">
+                <span class="prep-item-text">${escapeHtml(q.question)}</span>
+                ${renderPrepQuestionPreview(q) ? `<span class="prep-item-hint">${renderPrepQuestionPreview(q)}</span>` : ""}
+                ${q.tags.length ? `<span class="prep-item-tags">${q.tags.map((tg) => `<span class="tag-chip">${escapeHtml(tg)}</span>`).join("")}</span>` : ""}
+              </button>
+            </article>`).join("")}
         </div>`).join("");
 
   const sHtml = data.stories.length === 0
     ? `<p class="prep-empty">${t("prepNoStories")}</p>`
     : data.stories.map((s) => `
-        <label class="prep-item${s.is_ready ? " is-ready" : ""}">
+        <article class="prep-item prep-item-card${s.is_ready ? " is-ready" : ""}" data-prep-card="story" data-id="${s.id}">
           <input type="checkbox" class="prep-check" data-type="story" data-id="${s.id}" ${s.is_ready ? "checked" : ""} />
-          <span class="prep-item-text">${escapeHtml(s.title)}</span>
-          ${s.tags.length ? `<span class="prep-item-tags">${s.tags.map((tg) => `<span class="tag-chip">${escapeHtml(tg)}</span>`).join("")}</span>` : ""}
-          ${s.situation ? `<span class="prep-item-hint">${escapeHtml(s.situation.slice(0, 60))}${s.situation.length > 60 ? "…" : ""}</span>` : ""}
-        </label>`).join("");
+          <button type="button" class="prep-card-open" data-prep-card="story" data-id="${s.id}">
+            <span class="prep-item-text">${escapeHtml(s.title)}</span>
+            ${s.situation ? `<span class="prep-item-hint">${escapeHtml(s.situation.slice(0, 90))}${s.situation.length > 90 ? "..." : ""}</span>` : ""}
+            ${s.tags.length ? `<span class="prep-item-tags">${s.tags.map((tg) => `<span class="tag-chip">${escapeHtml(tg)}</span>`).join("")}</span>` : ""}
+          </button>
+        </article>`).join("");
 
   // Tech gap analysis
   const jdText = prepJob.jd_content || "";
@@ -2588,7 +2723,7 @@ async function renderPrepDialog() {
     }
   }
 
-  document.querySelector("#prepContent").innerHTML = `
+  target.querySelector("#prepContent").innerHTML = `
     <div class="prep-sections">
       <div class="prep-section prep-section-tech">
         <h4 class="prep-section-title">${t("techGapTitle")}</h4>
@@ -2604,7 +2739,7 @@ async function renderPrepDialog() {
       </div>
     </div>`;
 
-  document.querySelectorAll(".prep-check").forEach((cb) => {
+  target.querySelectorAll(".prep-check").forEach((cb) => {
     cb.addEventListener("change", async () => {
       const isReady = cb.checked ? 1 : 0;
       await api(`/api/jobs/${prepJob.id}/prep`, {
@@ -2612,17 +2747,66 @@ async function renderPrepDialog() {
         body: JSON.stringify({ item_type: cb.dataset.type, item_id: parseInt(cb.dataset.id), is_ready: isReady }),
       });
       cb.closest(".prep-item")?.classList.toggle("is-ready", cb.checked);
-      const allQ = document.querySelectorAll('.prep-check[data-type="question"]');
-      const allS = document.querySelectorAll('.prep-check[data-type="story"]');
+      const allQ = target.querySelectorAll('.prep-check[data-type="question"]');
+      const allS = target.querySelectorAll('.prep-check[data-type="story"]');
       const rQ = [...allQ].filter((c) => c.checked).length;
       const rS = [...allS].filter((c) => c.checked).length;
       const tot = allQ.length + allS.length;
       const rdy = rQ + rS;
-      document.querySelector(".prep-progress-text").textContent =
+      target.querySelector(".prep-progress-text").textContent =
         t("prepProgress", { q: rQ, qTotal: allQ.length, s: rS, sTotal: allS.length });
-      document.querySelector(".prep-bar-fill").style.width = tot > 0 ? `${Math.round((rdy / tot) * 100)}%` : "0%";
+      target.querySelector(".prep-bar-fill").style.width = tot > 0 ? `${Math.round((rdy / tot) * 100)}%` : "0%";
     });
   });
+  target.querySelectorAll(".prep-card-open").forEach((button) => {
+    button.addEventListener("click", () => {
+      const type = button.dataset.prepCard;
+      const source = type === "question" ? data.questions : data.stories;
+      const item = source.find((entry) => String(entry.id) === button.dataset.id);
+      if (item) openPrepItemCard(type, item);
+    });
+  });
+}
+
+async function renderJobPrepView() {
+  if (!prepJob) {
+    moduleView.innerHTML = `
+      <section class="prep-workspace-empty">
+        <h3>${t("jobPrep")}</h3>
+        <p class="muted">${t("noPrepJob")}</p>
+        <button type="button" class="primary" data-prep-back>${t("prepBackToApplications")}</button>
+      </section>
+    `;
+    moduleView.querySelector("[data-prep-back]")?.addEventListener("click", () => {
+      activeView = "APPLICATIONS";
+      loadJobs();
+    });
+    return;
+  }
+
+  moduleView.innerHTML = `
+    <section class="prep-workspace">
+      <header>
+        <div>
+          <p class="eyebrow" id="prepDialogEyebrow">${t("prepLabel")}</p>
+          <h3 id="prepDialogTitle">${escapeHtml(prepJob.position_name)}</h3>
+          <p class="muted" id="prepDialogMeta">${escapeHtml(prepJob.company_name)}</p>
+        </div>
+        <button type="button" data-prep-back>${t("prepBackToApplications")}</button>
+      </header>
+      <div id="prepProgress"></div>
+      <div id="prepContent"><p class="prep-empty muted">${t("loading")}</p></div>
+    </section>
+  `;
+  moduleView.querySelector("[data-prep-back]")?.addEventListener("click", () => {
+    activeView = "APPLICATIONS";
+    loadJobs();
+  });
+  try {
+    await renderPrepDialog(moduleView);
+  } catch (err) {
+    moduleView.querySelector("#prepContent").innerHTML = `<p class="prep-empty" style="color:var(--danger)">${escapeHtml(String(err))}</p>`;
+  }
 }
 
 function openNoteEditor(type, item = null) {
@@ -2962,8 +3146,9 @@ async function loadJobs() {
   const params = new URLSearchParams();
   if (searchInput.value.trim()) params.set("q", searchInput.value.trim());
   allJobs = await api(`/api/jobs?${params.toString()}`);
-  jobs = allJobs.filter((job) => matchesNavFilter(job, activeStatus));
+  jobs = allJobs.filter((job) => matchesNavFilter(job, activeStatus)).filter(matchesTableFilters);
   renderStatusControls();
+  renderApplicationTableHead();
   renderViewShell();
   if (activeView === "DASHBOARD") {
     userProfile = await api("/api/user-profile");
@@ -3082,7 +3267,7 @@ async function renderJobDetailDialog(job) {
     <section class="job-detail-actions">
       <button type="button" data-detail-action="timeline">${t("timeline")}</button>
       <button type="button" data-detail-action="jd">${t("openJdTitle")}</button>
-      ${job.current_stage === "SAVED" ? "" : `<button type="button" data-detail-action="prep">${t("prepBtn")}</button>`}
+      ${job.current_stage === "SAVED" ? "" : `<button type="button" class="prep-action-btn" data-detail-action="prep">${t("prepBtn")}</button>`}
       <button type="button" data-detail-action="edit">${t("edit")}</button>
       <button type="button" class="danger-button" data-detail-action="delete">${t("delete")}</button>
     </section>
@@ -3359,6 +3544,12 @@ prepDialog.addEventListener("click", (event) => {
   if (event.target.matches("[data-close-prep]")) {
     prepJob = null;
     prepDialog.close();
+  }
+});
+
+prepItemDialog.addEventListener("click", (event) => {
+  if (event.target.matches("[data-close-prep-item]")) {
+    prepItemDialog.close();
   }
 });
 
