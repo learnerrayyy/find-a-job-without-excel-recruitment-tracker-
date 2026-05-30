@@ -2,11 +2,12 @@ import globals from "globals";
 
 export default [
   {
-    files: ["web/**/*.js"],
+    files: ["web/**/*.js", "extension/**/*.js"],
     languageOptions: {
       ecmaVersion: 2020,
       globals: {
         ...globals.browser,
+        chrome: "readonly",
       },
     },
     rules: {

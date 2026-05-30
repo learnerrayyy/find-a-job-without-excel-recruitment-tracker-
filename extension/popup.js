@@ -21,6 +21,11 @@ const reloadProfilesBtn = document.querySelector("#reloadProfilesBtn");
 const autofillBtn = document.querySelector("#autofillBtn");
 const autofillResult = document.querySelector("#autofillResult");
 const closePopupBtn = document.querySelector("#closePopupBtn");
+const serverHelp = document.querySelector("#serverHelp");
+const serverCommand = document.querySelector("#serverCommand");
+const startServerBtn = document.querySelector("#startServerBtn");
+const copyServerCommandBtn = document.querySelector("#copyServerCommandBtn");
+const retryServerBtn = document.querySelector("#retryServerBtn");
 
 let capturedPage = null;
 let isSaving = false;
@@ -29,6 +34,9 @@ let userProfile = {};
 let selectedProfileId = "";
 let hasCapturedPage = false;
 let hasSavedCurrentCapture = false;
+let serverOnline = false;
+const NATIVE_HOST_NAME = "com.job_tracker.launcher";
+const START_SERVER_COMMAND = "python3 server.py";
 
 window.addEventListener("error", (event) => {
   views.forEach((view) => {
@@ -59,9 +67,63 @@ function setServerStatus(text, type = "") {
   serverStatus.className = `status ${type}`.trim();
 }
 
-function openDashboard() {
+function setServerHelpVisible(visible) {
+  serverHelp.hidden = !visible;
+  serverCommand.textContent = START_SERVER_COMMAND;
+}
+
+function sendNativeMessage(messagePayload) {
+  return new Promise((resolve) => {
+    if (!window.chrome?.runtime?.sendNativeMessage) {
+      resolve({ ok: false, error: "Native Messaging is not available." });
+      return;
+    }
+    chrome.runtime.sendNativeMessage(NATIVE_HOST_NAME, messagePayload, (response) => {
+      const err = chrome.runtime.lastError;
+      if (err) {
+        resolve({ ok: false, error: err.message });
+        return;
+      }
+      resolve(response || { ok: false, error: "Empty native host response." });
+    });
+  });
+}
+
+async function waitForServer(retries = 8) {
+  for (let i = 0; i < retries; i += 1) {
+    if (await checkServer(false)) return true;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  return false;
+}
+
+async function tryStartServerFromExtension() {
+  startServerBtn.disabled = true;
+  setMessage("正在尝试通过本地 helper 启动服务...");
+  const response = await sendNativeMessage({ action: "start_server" });
+  if (!response.ok) {
+    setMessage(`无法自动启动：${response.error || "请先安装 Native Messaging helper。"}`, "error");
+    startServerBtn.disabled = false;
+    setServerHelpVisible(true);
+    return false;
+  }
+  const online = await waitForServer();
+  startServerBtn.disabled = false;
+  setMessage(online ? "本地服务已启动。" : "helper 已运行，但还没有检测到服务。", online ? "ok" : "error");
+  return online;
+}
+
+async function openDashboard() {
+  let online = await checkServer(false);
+  if (!online) {
+    online = await tryStartServerFromExtension();
+  }
+  if (!online) {
+    setServerHelpVisible(true);
+    return;
+  }
   const url = `${API_BASE}/`;
-  if (chrome?.tabs?.create) {
+  if (window.chrome?.tabs?.create) {
     chrome.tabs.create({ url });
     window.close();
     return;
@@ -997,14 +1059,31 @@ function showView(viewName) {
   }
 }
 
-async function checkServer() {
+async function checkServer(showOfflineMessage = true) {
   try {
     const response = await fetch(`${API_BASE}/api/jobs`);
     if (!response.ok) throw new Error("server failed");
+    serverOnline = true;
     setServerStatus("Ready", "ok");
+    setServerHelpVisible(false);
+    return true;
   } catch (error) {
+    serverOnline = false;
     setServerStatus("Offline", "error");
-    setMessage("本地服务未启动。请先在项目目录运行：python3 server.py", "error");
+    setServerHelpVisible(true);
+    if (showOfflineMessage) {
+      setMessage(`本地服务未启动。可以尝试自动启动，或在项目目录运行：${START_SERVER_COMMAND}`, "error");
+    }
+    return false;
+  }
+}
+
+async function copyServerCommand() {
+  try {
+    await navigator.clipboard.writeText(START_SERVER_COMMAND);
+    setMessage("启动命令已复制。请在项目目录的终端中运行。", "ok");
+  } catch (error) {
+    setMessage(`复制失败，请手动输入：${START_SERVER_COMMAND}`, "error");
   }
 }
 
@@ -1042,6 +1121,10 @@ function renderProfiles() {
 }
 
 async function loadProfiles() {
+  if (!serverOnline) {
+    const online = await checkServer();
+    if (!online) throw new Error("本地服务未启动，无法读取 Resume Profiles。");
+  }
   const [profilesResponse, userResponse] = await Promise.all([
     fetch(`${API_BASE}/api/resume-profiles`),
     fetch(`${API_BASE}/api/user-profile`),
@@ -1133,6 +1216,12 @@ recaptureBtn.addEventListener("click", () => {
 });
 openDashboardBtn.addEventListener("click", openDashboard);
 closePopupBtn.addEventListener("click", closePopup);
+startServerBtn.addEventListener("click", tryStartServerFromExtension);
+copyServerCommandBtn.addEventListener("click", copyServerCommand);
+retryServerBtn.addEventListener("click", async () => {
+  const online = await checkServer();
+  setMessage(online ? "本地服务已连接，可以打开 Main Board。" : "仍未检测到本地服务。", online ? "ok" : "error");
+});
 form.addEventListener("submit", saveJob);
 viewTabs.forEach((tab) => {
   tab.addEventListener("click", () => {

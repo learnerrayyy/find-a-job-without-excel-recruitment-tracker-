@@ -27,6 +27,17 @@
         <button type="button" class="tab" data-view-tab="autofill">自动填入</button>
       </nav>
 
+      <section class="server-help" id="serverHelp" hidden>
+        <strong>本地服务还没有启动</strong>
+        <p>如果已经安装 Native Messaging helper，可以直接尝试启动；否则请在项目目录运行下面的命令。</p>
+        <code id="serverCommand">python3 server.py</code>
+        <div class="server-help-actions">
+          <button type="button" id="startServerBtn">尝试启动</button>
+          <button type="button" id="copyServerCommandBtn">复制命令</button>
+          <button type="button" class="primary" id="retryServerBtn">重新检测</button>
+        </div>
+      </section>
+
       <form id="captureForm" data-view="capture">
         <label>
           公司

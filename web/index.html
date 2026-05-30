@@ -24,16 +24,33 @@
           </div>
           <nav class="primary-nav">
             <button class="summary-nav-button sidebar-home-btn" id="dashboardNavButton">Main Dashboard</button>
-            <button class="summary-nav-button" id="applicationsNavButton">Applications</button>
-            <button class="summary-nav-button" id="prepareNavButton">Prepare</button>
-            <button class="summary-nav-button" id="summaryNavButton">Funnel Analysis</button>
+            <div class="nav-group">
+              <p class="nav-group-label" data-nav-label="track">Track</p>
+              <button class="summary-nav-button" id="applicationsNavButton">Applications</button>
+              <details class="nav-section" open>
+                <summary>
+                  <span>Filters</span>
+                </summary>
+                <nav class="status-list" id="statusFilters"></nav>
+              </details>
+            </div>
+            <div class="nav-group">
+              <p class="nav-group-label" data-nav-label="prepare">Prepare</p>
+              <button class="summary-nav-button" id="prepareNavButton">Prepare Hub</button>
+            </div>
+            <div class="nav-group">
+              <p class="nav-group-label" data-nav-label="review">Review</p>
+              <button class="summary-nav-button" id="summaryNavButton">Funnel Analysis</button>
+              <button class="summary-nav-button" data-module-view="WEEKLY_REVIEW">Weekly Review</button>
+            </div>
+            <div class="nav-group">
+              <p class="nav-group-label" data-nav-label="automation">Automation</p>
+              <button class="summary-nav-button" data-module-view="EMAIL_SYNC">Email Sync</button>
+              <button class="summary-nav-button" data-module-view="AI_ASSISTANT">AI Assistant</button>
+              <button class="summary-nav-button" data-module-view="COVER_LETTERS">Cover Letters</button>
+              <button class="summary-nav-button" data-module-view="AUTO_APPLY">Auto Apply</button>
+            </div>
           </nav>
-          <details class="nav-section" open>
-            <summary>
-              <span>Filters</span>
-            </summary>
-            <nav class="status-list" id="statusFilters"></nav>
-          </details>
         </div>
       </aside>
 
@@ -442,6 +459,20 @@
         </header>
         <div id="prepProgress"></div>
         <div id="prepContent"></div>
+      </div>
+    </dialog>
+
+    <dialog id="prepItemDialog">
+      <div class="dialog-form prep-card-dialog">
+        <header>
+          <div>
+            <p class="eyebrow" id="prepItemEyebrow">Prep Card</p>
+            <h3 id="prepItemTitle"></h3>
+            <p class="muted" id="prepItemMeta"></p>
+          </div>
+          <button type="button" class="icon-btn" data-close-prep-item aria-label="Close">×</button>
+        </header>
+        <div id="prepItemContent"></div>
       </div>
     </dialog>
 
