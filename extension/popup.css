@@ -63,6 +63,12 @@ header {
   gap: 8px;
 }
 
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 #openDashboardBtn {
   min-height: 32px;
   border-color: rgb(51 39 42 / 16%);
@@ -70,6 +76,18 @@ header {
   color: #33272a;
   font-size: 12px;
   box-shadow: 0 8px 18px rgb(217 79 121 / 18%);
+}
+
+.close-popup-btn {
+  width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-color: #33272a;
+  background: var(--panel);
+  color: #33272a;
+  box-shadow: 2px 2px 0 #33272a;
+  font-size: 18px;
+  line-height: 1;
 }
 
 h1,
@@ -203,14 +221,38 @@ button:disabled {
 
 .message {
   margin-top: 12px;
+  border-radius: 6px;
+  padding: 0;
 }
 
 .message.error {
+  border: 1px solid #f3a6ba;
+  background: #ffe0e8;
   color: var(--danger);
+  padding: 9px 10px;
 }
 
 .message.ok {
+  border: 1px solid #8bd49b;
+  background: #e3f8e8;
+  color: #24543a;
+  padding: 9px 10px;
+  font-weight: 750;
+}
+
+#saveBtn:disabled {
+  border-color: #24543a;
+  background: #c3f0ca;
+  color: #24543a;
+  box-shadow: 2px 2px 0 #24543a;
+  cursor: default;
+  opacity: 1;
+}
+
+.primary:disabled:hover {
+  background: #c3f0ca;
   color: var(--ok);
+  transform: none;
 }
 
 .tabs {
